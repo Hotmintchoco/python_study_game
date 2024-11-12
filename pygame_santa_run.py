@@ -92,10 +92,16 @@ santa_sprites_id = 0
 bullet_group = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
 
-ground_y = 512 # 바닥 위치
+# 산타 점프 변수
+santa_vy = 0.0 # y 방향 속도
+dt = 1.0 / 30.0 # 시간 간격 (게임에서는 가급적 생략)
+gravity = 1000 # 중력 가속도 (적당한 숫자로 조절)
+
+ground_y = 580 # 바닥 위치
 
 running = True
 
+santa_rect = img.get_rect().move(240, 440)
 while running:
 
     for event in pygame.event.get():
@@ -104,7 +110,10 @@ while running:
             running = False
         elif event.type == KEYUP and event.key == K_LCTRL:
             print(santa_rect.right)
-            bullet_group.add(Bullet(santa_rect.right, 500))
+            bullet_group.add(Bullet(santa_rect.right, santa_rect.centery))
+
+        elif event.type == KEYUP and event.key == K_SPACE:
+            santa_vy -= 800
 
     """업데이트"""
     # 배경 및 산타 업데이트
@@ -116,6 +125,15 @@ while running:
 
     santa_sprites_id += 0.3
     santa_sprites_id %= len(santa_sprites)
+
+    # 산타 점프 update
+    santa_vy += gravity * dt # 속도 증가 = 가속도 * 시간 간격
+    santa_rect.y += santa_vy * dt # 위치 이동 = 속도 * 시간 간격
+
+    # 바닥 충돌 반응
+    if santa_vy > 0 and santa_rect.bottom > ground_y:
+        santa_vy = 0 # 낙하 중지
+        santa_rect.bottom = ground_y
 
     # 장애물 및 총알 업데이트
     bullet_group.update()
@@ -152,7 +170,6 @@ while running:
         screen.blit(tile5, (-gx + i * 64, 64 * 11))
     
     # 산타 그리기
-    santa_rect = img.get_rect().move(240, 440)
     screen.blit(santa_sprites[int(santa_sprites_id)], santa_rect)
 
     bullet_group.draw(screen)
