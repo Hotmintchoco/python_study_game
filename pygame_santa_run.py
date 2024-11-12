@@ -30,7 +30,7 @@ class Bullet(pygame.sprite.Sprite):
 
     # 디버깅용
     def draw_rect(self, screen):
-        pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
+        pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)
 
 class Obstacle(pygame.sprite.Sprite): # class Bullet과 비슷합니다.
     img_src = None
@@ -65,6 +65,30 @@ pygame.init()
 screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
 clock = pygame.time.Clock()
 
+# 배경 이미지
+background = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/BG/BG.png").convert()
+bgx = 0
+
+# 타일 이미지
+tile2 = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Tiles/2.png").convert_alpha()
+tile2 = pygame.transform.scale(tile2, (64, 64)) # 적당한 크기로 조정
+tile5 = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Tiles/5.png").convert_alpha()
+tile5 = pygame.transform.scale(tile5, (64, 64))
+gx = 0
+
+# santa sprites
+santa_sprites = []
+
+for i in range(1, 12):
+    img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Run ({i}).png")
+    img = img.convert_alpha()
+    w, h = img.get_size()
+    img = pygame.transform.scale(img, (w // 4, h // 4))
+    img = img.subsurface((25,0,130,140))
+    santa_sprites.append(img)
+
+santa_sprites_id = 0
+
 bullet_group = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
 
@@ -79,15 +103,27 @@ while running:
             quit = True
             running = False
         elif event.type == KEYUP and event.key == K_LCTRL:
-            bullet_group.add(Bullet(240, 400))
+            print(santa_rect.right)
+            bullet_group.add(Bullet(santa_rect.right, 500))
 
     """업데이트"""
+    # 배경 및 산타 업데이트
+    bgx += 1
+    bgx %= background.get_width()
+
+    gx += 5
+    gx %= tile2.get_width()
+
+    santa_sprites_id += 0.3
+    santa_sprites_id %= len(santa_sprites)
+
+    # 장애물 및 총알 업데이트
     bullet_group.update()
     obstacles.update()
     
     # 확률을 바꿔보세요.
     if random.random() > 0.98:  # 프레임당 2%의 확률로 장애물 생성
-        obstacles.add(Obstacle(1000, 480, vx=-5))
+        obstacles.add(Obstacle(1000, 530, vx=-5))
 
     for o in obstacles.copy(): # copy 주의
         if o.rect.right < 0:
@@ -105,7 +141,19 @@ while running:
     """화면에 그리기"""
 
     screen.fill((255, 255, 255))
-    pygame.draw.rect(screen, color=(128, 128, 128), rect=pygame.Rect(0, 64*8, 1024, 64*4))
+    # 배경 그리기
+    screen.blit(background, dest = (-bgx, 0))
+    screen.blit(background, dest = (-bgx + background.get_width(), 0))
+
+    # 바닥 타일 그리기
+    for i in range(-1, 17):
+        screen.blit(tile2,(-gx + i * 64, 64 * 9))
+        screen.blit(tile5, (-gx + i * 64, 64 * 10))
+        screen.blit(tile5, (-gx + i * 64, 64 * 11))
+    
+    # 산타 그리기
+    santa_rect = img.get_rect().move(240, 440)
+    screen.blit(santa_sprites[int(santa_sprites_id)], santa_rect)
 
     bullet_group.draw(screen)
     obstacles.draw(screen)
