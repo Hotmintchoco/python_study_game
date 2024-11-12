@@ -195,15 +195,16 @@ while running:
         screen.blit(tile5, (-gx + i * 64, 64 * 10))
         screen.blit(tile5, (-gx + i * 64, 64 * 11))
 
+    # 상자, 장애물 그리기
+    bullet_group.draw(screen)
+    obstacles.draw(screen)
+    
     # 산타 그리기
     if  not game_over:
         screen.blit(santa_sprites[int(santa_sprites_id)], santa_rect)
     else:
         screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa_rect)
 
-    # 상자, 장애물 그리기
-    bullet_group.draw(screen)
-    obstacles.draw(screen)
 
     # 게임폰트 그리기
     if game_over:
