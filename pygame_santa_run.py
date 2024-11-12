@@ -77,6 +77,7 @@ gx = 0
 
 # santa sprites
 santa_sprites = []
+santa_dead_sprites = []
 
 for i in range(1, 12):
     img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Run ({i}).png")
@@ -86,7 +87,15 @@ for i in range(1, 12):
     img = img.subsurface((25, 0, 130, 140))
     santa_sprites.append(img)
 
+for i in range(1, 18):
+    dead_img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Dead ({i}).png")
+    dead_img = dead_img.convert_alpha()
+    w, h = dead_img.get_size()
+    dead_img = pygame.transform.scale(dead_img, (w // 4, h // 4))
+    santa_dead_sprites.append(dead_img)
+
 santa_sprites_id = 0
+santa_dead_sprites_id = 0
 
 bullet_group = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
@@ -108,6 +117,7 @@ game_over = False
 santa_rect = img.get_rect().move(240, 440)
 # collid_santa 사각형을 산타 이미지의 중앙에 배치.
 collid_santa = pygame.Rect(santa_rect.x, santa_rect.y, santa_rect.width - 75, santa_rect.height)
+dead_santa = pygame.Rect(santa_rect.x, santa_rect.y, santa_rect.width - 75, santa_rect.height)
 
 while running:
 
@@ -167,6 +177,11 @@ while running:
                 elif o.rect.colliderect(b.rect):
                     obstacles.remove(o)
                     bullet_group.remove(b)
+    # game over
+    else:
+        santa_dead_sprites_id += 0.3
+        if santa_dead_sprites_id >= len(santa_dead_sprites):
+            santa_dead_sprites_id = len(santa_dead_sprites) - 1
 
     """화면에 그리기"""
     screen.fill((255, 255, 255))
@@ -181,8 +196,10 @@ while running:
         screen.blit(tile5, (-gx + i * 64, 64 * 11))
 
     # 산타 그리기
-    screen.blit(santa_sprites[int(santa_sprites_id)], santa_rect)
-    pygame.draw.rect(screen, color=(0, 0, 255), rect=collid_santa, width=2)
+    if  not game_over:
+        screen.blit(santa_sprites[int(santa_sprites_id)], santa_rect)
+    else:
+        screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa_rect)
 
     # 상자, 장애물 그리기
     bullet_group.draw(screen)
