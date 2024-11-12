@@ -7,7 +7,7 @@ class Bullet(pygame.sprite.Sprite):
 
     def __init__(self, x, y):
         super().__init__()
-        if Bullet.img_src == None:
+        if Bullet.img_src is None:
             Bullet.img_src = pygame.image.load("챕터09_게임프로그래밍/present-gift-box-reward-full.png").convert_alpha()
             w, h = Bullet.img_src.get_size()
             Bullet.img_src = pygame.transform.scale(Bullet.img_src, (w // 10, h // 10))
@@ -28,15 +28,12 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(Bullet.img_src, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-    def draw_rect(self, screen):
-        pygame.draw.rect(screen, (255, 0, 0), self.rect, 1)
-
 class Obstacle(pygame.sprite.Sprite):
     img_src = None
 
     def __init__(self, x, y, vx=0.0, vy=0.0, av=0.0, scale=1):
         super().__init__()
-        if Obstacle.img_src == None:
+        if Obstacle.img_src is None:
             Obstacle.img_src = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Object/IceBox.png").convert_alpha()
             w, h = Obstacle.img_src.get_size()
             Obstacle.img_src = pygame.transform.scale(Obstacle.img_src, (w // scale, h // scale))
@@ -58,6 +55,53 @@ class Obstacle(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(Obstacle.img_src, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
+class Santa(pygame.sprite.Sprite):
+    img_src = []
+
+    def __init__(self, x, y):
+        super().__init__()
+        if not Santa.img_src:
+            for i in range(1, 12):
+                img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Run ({i}).png")
+                img = img.convert_alpha()
+                w, h = img.get_size()
+                img = pygame.transform.scale(img, (w // 4, h // 4))
+                img = img.subsurface((25, 0, 130, 140))
+                Santa.img_src.append(img)
+        self.image = Santa.img_src[0]
+        self.santa_vx = x
+        self.santa_vy = 0.0
+        self.santa_sprites_id = 0
+        self.santa_rect = self.image.get_rect().move(x, y)
+        # 산타 피격 범위 / collid_santa 사각형을 산타 이미지의 중앙에 배치.
+        self.collid_santa = pygame.Rect(
+            x,
+            y, 
+            self.santa_rect.width - 75, 
+            self.santa_rect.height
+        )
+        self.dt = 1.0 / 30.0  # 시간 간격 (게임에서는 가급적 생략)
+        self.gravity = 1000  # 중력 가속도 (적당한 숫자로 조절)
+        
+    def update(self):
+        self.santa_sprites_id += 0.3
+        self.santa_sprites_id %= len(Santa.img_src)
+        self.image = Santa.img_src[int(self.santa_sprites_id)]
+        self.santa_vy += self.gravity * self.dt  # 속도 증가 = 가속도 * 시간 간격
+        self.santa_rect.y += self.santa_vy * self.dt  # 위치 이동 = 속도 * 시간 간격
+        self.collid_santa.center = self.santa_rect.center  # 충돌 감지 사각형 위치 업데이트
+
+        # 바닥 충돌 반응
+        if self.santa_vy > 0 and self.santa_rect.bottom > ground_y:
+            self.santa_vy = 0  # 낙하 중지
+            self.santa_rect.bottom = ground_y
+            self.collid_santa.bottom = ground_y
+
+    def jump(self):
+        self.santa_vy -= 800
+
+    def draw_rect(self):
+        screen.blit(self.image, self.santa_rect)
 
 pygame.init()
 
@@ -76,16 +120,8 @@ tile5 = pygame.transform.scale(tile5, (64, 64))
 gx = 0
 
 # santa sprites
-santa_sprites = []
+santa = Santa(240, 440)
 santa_dead_sprites = []
-
-for i in range(1, 12):
-    img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Run ({i}).png")
-    img = img.convert_alpha()
-    w, h = img.get_size()
-    img = pygame.transform.scale(img, (w // 4, h // 4))
-    img = img.subsurface((25, 0, 130, 140))
-    santa_sprites.append(img)
 
 for i in range(1, 18):
     dead_img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Dead ({i}).png")
@@ -94,16 +130,12 @@ for i in range(1, 18):
     dead_img = pygame.transform.scale(dead_img, (w // 4, h // 4))
     santa_dead_sprites.append(dead_img)
 
-santa_sprites_id = 0
+
 santa_dead_sprites_id = 0
+dead_santa = pygame.Rect(santa.santa_rect.x, santa.santa_rect.y, santa.santa_rect.width - 75, santa.santa_rect.height)
 
 bullet_group = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
-
-# 산타 점프 변수
-santa_vy = 0.0  # y 방향 속도
-dt = 1.0 / 30.0  # 시간 간격 (게임에서는 가급적 생략)
-gravity = 1000  # 중력 가속도 (적당한 숫자로 조절)
 
 ground_y = 580  # 바닥 위치
 
@@ -114,11 +146,6 @@ gametext = game_font.render("", 1, (0, 0, 0))
 running = True
 game_over = False
 
-santa_rect = img.get_rect().move(240, 440)
-# collid_santa 사각형을 산타 이미지의 중앙에 배치.
-collid_santa = pygame.Rect(santa_rect.x, santa_rect.y, santa_rect.width - 75, santa_rect.height)
-dead_santa = pygame.Rect(santa_rect.x, santa_rect.y, santa_rect.width - 75, santa_rect.height)
-
 while running:
 
     for event in pygame.event.get():
@@ -126,10 +153,10 @@ while running:
             quit = True
             running = False
         elif event.type == KEYUP and event.key == K_LCTRL and not game_over:
-            bullet_group.add(Bullet(santa_rect.right, santa_rect.centery))
+            bullet_group.add(Bullet(santa.santa_rect.right, santa.santa_rect.centery))
 
         elif event.type == KEYUP and event.key == K_SPACE and not game_over:
-            santa_vy -= 800
+            santa.jump()
 
     if not game_over:
         """업데이트"""
@@ -140,19 +167,7 @@ while running:
         gx += 5
         gx %= tile2.get_width()
 
-        santa_sprites_id += 0.3
-        santa_sprites_id %= len(santa_sprites)
-
-        # 산타 점프 update
-        santa_vy += gravity * dt  # 속도 증가 = 가속도 * 시간 간격
-        santa_rect.y += santa_vy * dt  # 위치 이동 = 속도 * 시간 간격
-        collid_santa.center = santa_rect.center  # 충돌 감지 사각형 위치 업데이트
-
-        # 바닥 충돌 반응
-        if santa_vy > 0 and santa_rect.bottom > ground_y:
-            santa_vy = 0  # 낙하 중지
-            santa_rect.bottom = ground_y
-            collid_santa.bottom = ground_y
+        santa.update()
 
         # 장애물 및 총알 업데이트
         bullet_group.update()
@@ -166,7 +181,7 @@ while running:
             if o.rect.right < 0:
                 obstacles.remove(o)
 
-            elif o.rect.colliderect(collid_santa):
+            elif o.rect.colliderect(santa.collid_santa):
                 gametext = game_font.render("Game Over", 1, (255, 0, 0))
                 game_over = True
 
@@ -200,11 +215,10 @@ while running:
     obstacles.draw(screen)
     
     # 산타 그리기
-    if  not game_over:
-        screen.blit(santa_sprites[int(santa_sprites_id)], santa_rect)
+    if not game_over:
+        santa.draw_rect()
     else:
-        screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa_rect)
-
+        screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa.santa_rect)
 
     # 게임폰트 그리기
     if game_over:
