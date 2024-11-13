@@ -166,6 +166,9 @@ candies = pygame.sprite.Group()
 ground_y = 580  # 바닥 위치
 
 # Game Over or Cleared
+game_point = pygame.font.SysFont("system", 55)
+point = 0
+MAX_POINT = 50
 game_font = pygame.font.SysFont("system", 180)
 gametext = game_font.render("", 1, (0, 0, 0))
 
@@ -211,11 +214,16 @@ while running:
             candy_y = int((rand - 0.95) * 10000) % 200 + 250
             candies.add(Candy(1000, candy_y, vx=-5))
 
+        if point >= MAX_POINT:
+            gametext = game_font.render("Cleared", 1, (0, 0, 255))
+            game_over = True
+
         for c in candies.copy():
             if c.rect.right < 0:
                 candies.remove(c)
 
             elif c.rect.colliderect(santa.santa_rect):
+                point += 1
                 candies.remove(c)
 
         for o in obstacles.copy():  # copy 주의
@@ -260,11 +268,16 @@ while running:
     if not game_over:
         santa.draw_rect()
     else:
-        screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa.santa_rect)
+        if point >= MAX_POINT:
+            santa.draw_rect()
+        else:
+            screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa.santa_rect)
 
     # 게임폰트 그리기
+    point_text = game_point.render(f"point = {point}", 1, (120, 120, 120))
+    screen.blit(point_text, (750, 10))
     if game_over:
-        screen.blit(gametext, (150, int(screen.get_height() / 2 - 90)))
+        screen.blit(gametext, (200, int(screen.get_height() / 2 - 90)))
 
     pygame.display.flip()
     clock.tick(40)
