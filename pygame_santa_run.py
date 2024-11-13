@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import random
+import os
 
 class Bullet(pygame.sprite.Sprite):
     img_src = None
@@ -56,15 +57,13 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
 class Candy(pygame.sprite.Sprite):
-    img_src = None
+    img_src = []
 
     def __init__(self, x, y, vx=0.0, vy=0.0, av=0.0, scale=1):
         super().__init__()
-        if Candy.img_src is None:
-            Candy.img_src = pygame.image.load("챕터09_게임프로그래밍/yaycandies/size1/bean_blue.png").convert_alpha()
-            w, h = Candy.img_src.get_size()
-            Candy.img_src = pygame.transform.scale(Candy.img_src, (w // scale, h // scale))
-        self.image = Candy.img_src
+        if not Candy.img_src:
+            self.load_candy_images()
+        self.image = random.choice(Candy.img_src)
         self.x = x
         self.y = y
         self.vx = vx
@@ -74,12 +73,20 @@ class Candy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
+    def load_candy_images(self):
+        candy_folder = "챕터09_게임프로그래밍/yaycandies/size1/"
+        for file_name in os.listdir(candy_folder):
+            if file_name.endswith(".png"):
+                img_path = os.path.join(candy_folder, file_name)
+                img = pygame.image.load(img_path).convert_alpha()
+                Candy.img_src.append(img)
+
     def update(self):
         self.x += self.vx
         self.y += self.vy
         self.rect.center = (self.x, self.y)
         self.angle -= self.av
-        self.image = pygame.transform.rotate(Candy.img_src, self.angle)
+        self.image = pygame.transform.rotate(self.image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
 class Santa(pygame.sprite.Sprite):
