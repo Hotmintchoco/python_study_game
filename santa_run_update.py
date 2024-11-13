@@ -275,7 +275,7 @@ while running:
             if c.rect.right < 0:
                 candies.remove(c)
 
-            elif c.rect.colliderect(santa.santa_rect):
+            elif c.rect.colliderect(santa.santa_rect) and c.candy_now == True:
                 point_sound.play()
                 point += 1
                 c.explosion_candy()
