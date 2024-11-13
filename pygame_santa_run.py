@@ -1,4 +1,5 @@
 import pygame
+from pygame import mixer
 from pygame.locals import *
 import random
 import os
@@ -142,10 +143,26 @@ pygame.init()
 screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
 clock = pygame.time.Clock()
 
+# 배경 음악
+mixer.init()
+mixer.music.load("챕터09_게임프로그래밍/jingle-bells-violin-loop-8645.mp3")
+mixer.music.set_volume(0.1)
+mixer.music.play()
+# 사운드
+break_sound = mixer.Sound("챕터09_게임프로그래밍/422669__lynx_5969__ice-break-with-hand.wav")
+break_sound.set_volume(0.3)
+# https://freesound.org/people/soundmatch24/sounds/186876/
+game_over_sound = mixer.Sound("챕터09_게임프로그래밍/186876__soundmatch24__dead-walking.mp3")
+game_over_sound.set_volume(0.2)
+clear_sound = mixer.Sound("챕터09_게임프로그래밍/270402__littlerobotsoundfactory__jingle_win_00.wav")
+clear_sound.set_volume(0.3)
+# https://freesound.org/people/CJspellsfish/sounds/676402/
+point_sound = mixer.Sound("챕터09_게임프로그래밍/676402__cjspellsfish__score-2.mp3")
+point_sound.set_volume(0.4)
+
 # 배경 이미지
 background = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/BG/BG.png").convert()
 bgx = 0
-
 # 타일 이미지
 tile2 = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Tiles/2.png").convert_alpha()
 tile2 = pygame.transform.scale(tile2, (64, 64))  # 적당한 크기로 조정
@@ -222,6 +239,7 @@ while running:
             candies.add(Candy(1000, candy_y, vx=-5))
 
         if point >= MAX_POINT:
+            clear_sound.play()
             gametext = game_font.render("Cleared", 1, (0, 0, 255))
             game_over = True
 
@@ -230,6 +248,7 @@ while running:
                 candies.remove(c)
 
             elif c.rect.colliderect(santa.santa_rect):
+                point_sound.play()
                 point += 1
                 candies.remove(c)
 
@@ -237,7 +256,9 @@ while running:
             if o.rect.right < 0:
                 obstacles.remove(o)
 
+            # https://freesound.org/people/soundmatch24/sounds/186876/ => game_over sound
             elif o.rect.colliderect(santa.collid_santa):
+                game_over_sound.play()
                 gametext = game_font.render("Game Over", 1, (255, 0, 0))
                 game_over = True
 
@@ -246,6 +267,7 @@ while running:
                     bullet_group.remove(b)
 
                 elif o.rect.colliderect(b.rect):
+                    break_sound.play()
                     obstacles.remove(o)
                     bullet_group.remove(b)
     # game over
@@ -275,13 +297,14 @@ while running:
     if not game_over:
         santa.draw_rect()
     else:
+        mixer.music.stop()
         if point >= MAX_POINT:
             santa.draw_rect()
         else:
             screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa.santa_rect)
 
     # 게임폰트 그리기
-    point_text = game_point.render(f"point = {point}", 1, (120, 120, 120))
+    point_text = game_point.render(f"point = {point}", 1, (255, 228, 0))
     screen.blit(point_text, (750, 10))
     if game_over:
         screen.blit(gametext, (200, int(screen.get_height() / 2 - 90)))
