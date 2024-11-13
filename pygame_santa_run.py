@@ -55,6 +55,33 @@ class Obstacle(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(Obstacle.img_src, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
+class Candy(pygame.sprite.Sprite):
+    img_src = None
+
+    def __init__(self, x, y, vx=0.0, vy=0.0, av=0.0, scale=1):
+        super().__init__()
+        if Candy.img_src is None:
+            Candy.img_src = pygame.image.load("챕터09_게임프로그래밍/yaycandies/size1/bean_blue.png").convert_alpha()
+            w, h = Candy.img_src.get_size()
+            Candy.img_src = pygame.transform.scale(Candy.img_src, (w // scale, h // scale))
+        self.image = Candy.img_src
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
+        self.av = av  # 각 속도 (angular velocity)
+        self.angle = 0.0
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+        self.rect.center = (self.x, self.y)
+        self.angle -= self.av
+        self.image = pygame.transform.rotate(Candy.img_src, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+
 class Santa(pygame.sprite.Sprite):
     img_src = []
 
@@ -75,8 +102,7 @@ class Santa(pygame.sprite.Sprite):
         self.santa_rect = self.image.get_rect().move(x, y)
         # 산타 피격 범위 / collid_santa 사각형을 산타 이미지의 중앙에 배치.
         self.collid_santa = pygame.Rect(
-            x,
-            y, 
+            x, y, 
             self.santa_rect.width - 75, 
             self.santa_rect.height
         )
@@ -102,6 +128,7 @@ class Santa(pygame.sprite.Sprite):
 
     def draw_rect(self):
         screen.blit(self.image, self.santa_rect)
+
 
 pygame.init()
 
@@ -130,12 +157,11 @@ for i in range(1, 18):
     dead_img = pygame.transform.scale(dead_img, (w // 4, h // 4))
     santa_dead_sprites.append(dead_img)
 
-
 santa_dead_sprites_id = 0
-dead_santa = pygame.Rect(santa.santa_rect.x, santa.santa_rect.y, santa.santa_rect.width - 75, santa.santa_rect.height)
 
 bullet_group = pygame.sprite.Group()
 obstacles = pygame.sprite.Group()
+candies = pygame.sprite.Group()
 
 ground_y = 580  # 바닥 위치
 
@@ -172,10 +198,25 @@ while running:
         # 장애물 및 총알 업데이트
         bullet_group.update()
         obstacles.update()
+        candies.update()
 
-        # 확률을 바꿔보세요.
-        if random.random() > 0.98:  # 프레임당 2%의 확률로 장애물 생성
+        # 장애물 확률.
+        rand = random.random()
+        if  rand > 0.985:  # 프레임당 2%의 확률로 장애물 생성
             obstacles.add(Obstacle(1000, 530, vx=-5))
+        # 캔디 확률
+        # rand -> 0.9501 ~ 0.9999 - 0.95
+        # => 0.0001 ~ 0.0499 * 10000 => int(1.xx ~ 499.xx) % 100 -> 1 ~ 99
+        if rand > 0.95:
+            candy_y = int((rand - 0.95) * 10000) % 200 + 250
+            candies.add(Candy(1000, candy_y, vx=-5))
+
+        for c in candies.copy():
+            if c.rect.right < 0:
+                candies.remove(c)
+
+            elif c.rect.colliderect(santa.santa_rect):
+                candies.remove(c)
 
         for o in obstacles.copy():  # copy 주의
             if o.rect.right < 0:
@@ -213,6 +254,7 @@ while running:
     # 상자, 장애물 그리기
     bullet_group.draw(screen)
     obstacles.draw(screen)
+    candies.draw(screen)
     
     # 산타 그리기
     if not game_over:
@@ -225,6 +267,6 @@ while running:
         screen.blit(gametext, (150, int(screen.get_height() / 2 - 90)))
 
     pygame.display.flip()
-    clock.tick(30)
+    clock.tick(40)
 
 pygame.quit()
