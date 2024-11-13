@@ -3,6 +3,9 @@ from pygame import mixer
 from pygame.locals import *
 import random
 import os
+import warnings
+# 파이썬 경고 무시 설정
+warnings.filterwarnings("ignore", category=UserWarning, module='libpng')
 
 class Bullet(pygame.sprite.Sprite):
     img_src = None
@@ -64,7 +67,9 @@ class Candy(pygame.sprite.Sprite):
         super().__init__()
         if not Candy.img_src:
             self.load_candy_images()
-        self.image = random.choice(Candy.img_src)
+        img_info = random.choice(Candy.img_src)
+        self.image = img_info['image']
+        self.color = img_info['color']
         self.x = x
         self.y = y
         self.vx = vx
@@ -73,22 +78,51 @@ class Candy(pygame.sprite.Sprite):
         self.angle = 0.0
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
+        self.candy_now = True
+        self.explosion_sprites = []
+        self.sprites_id = 0  # 애니메이션 상태 변수
 
     def load_candy_images(self):
         candy_folder = "챕터09_게임프로그래밍/yaycandies/size1/"
         for file_name in os.listdir(candy_folder):
+            color = None
+            if 'blue' in file_name:
+                color = "blue"
+            elif 'green' in file_name:
+                color = "green"
+            elif 'pink' in file_name:
+                color = "pink"
+            else:
+                color = "red"
+
             if file_name.endswith(".png"):
                 img_path = os.path.join(candy_folder, file_name)
                 img = pygame.image.load(img_path).convert_alpha()
-                Candy.img_src.append(img)
+                Candy.img_src.append({'image': img, 'color': color})
 
     def update(self):
-        self.x += self.vx
-        self.y += self.vy
-        self.rect.center = (self.x, self.y)
-        self.angle -= self.av
-        self.image = pygame.transform.rotate(self.image, self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
+        if self.candy_now:
+            self.x += self.vx
+            self.y += self.vy
+            self.rect.center = (self.x, self.y)
+            self.angle -= self.av
+            self.image = pygame.transform.rotate(self.image, self.angle)
+            self.rect = self.image.get_rect(center=self.rect.center)
+        else:
+            if self.sprites_id < len(self.explosion_sprites):
+                self.image = pygame.transform.rotate(self.explosion_sprites[int(self.sprites_id)], self.angle)
+                self.rect = self.image.get_rect(center=self.rect.center)
+                self.sprites_id += 0.3
+            else:
+                self.kill()  # 애니메이션이 끝나면 스프라이트 제거
+
+    def explosion_candy(self):
+        for i in range(1, 6):
+            img = pygame.image.load(f"챕터09_게임프로그래밍/yaycandies/size1_explosion/explosion{self.color}0{i}.png")
+            img = img.convert_alpha()
+            self.explosion_sprites.append(img)
+        self.candy_now = False
+        self.sprites_id = 0  # 애니메이션 상태 초기화
 
 class Santa(pygame.sprite.Sprite):
     img_src = []
@@ -247,16 +281,15 @@ while running:
             if c.rect.right < 0:
                 candies.remove(c)
 
-            elif c.rect.colliderect(santa.santa_rect):
+            elif c.rect.colliderect(santa.santa_rect) and c.candy_now == True:
                 point_sound.play()
                 point += 1
-                candies.remove(c)
+                c.explosion_candy()
 
         for o in obstacles.copy():  # copy 주의
             if o.rect.right < 0:
                 obstacles.remove(o)
 
-            # https://freesound.org/people/soundmatch24/sounds/186876/ => game_over sound
             elif o.rect.colliderect(santa.collid_santa):
                 game_over_sound.play()
                 gametext = game_font.render("Game Over", 1, (255, 0, 0))
