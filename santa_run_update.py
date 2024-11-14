@@ -1,343 +1,333 @@
 import pygame
-from pygame import mixer
-from pygame.locals import *
 import random
-import os
+from PIL import Image
+from pygame.locals import *
+from pygame import mixer
+GROUND_SPEED = 10.0
 
-class Bullet(pygame.sprite.Sprite):
-    img_src = None
 
-    def __init__(self, x, y):
+class MovingObject(pygame.sprite.Sprite):
+    def __init__(self, x, y, angle=0.0, vx=0.0, vy=0.0, av=0.0, ds=0.0):
         super().__init__()
-        if Bullet.img_src is None:
-            Bullet.img_src = pygame.image.load("챕터09_게임프로그래밍/present-gift-box-reward-full.png").convert_alpha()
-            w, h = Bullet.img_src.get_size()
-            Bullet.img_src = pygame.transform.scale(Bullet.img_src, (w // 10, h // 10))
-        self.image = Bullet.img_src
-        self.vx = 20.0  # 총알 속도
-        self.vy = 0.0
         self.x = x
         self.y = y
-        self.angle = 0.0
+        self.angle = angle  # 회전
+        self.vx = vx
+        self.vy = vy
+        self.av = av  # angular velocity (각속도)
+        self.ds = ds  # 스프라이트 변화 속도
+        self.sprites = self.init_sprites()
+        self.sprite_id = 0
+        self.image = self.sprites[int(self.sprite_id)]
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
-
+    def init_sprites(self):
+        raise NotImplementedError("init_sprites() not implemented")
     def update(self):
         self.x += self.vx
         self.y += self.vy
+        self.angle += self.av
         self.rect.center = (self.x, self.y)
-        self.angle -= 20.0
-        self.image = pygame.transform.rotate(Bullet.img_src, self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
-
-class Obstacle(pygame.sprite.Sprite):
-    img_src = None
-
-    def __init__(self, x, y, vx=0.0, vy=0.0, av=0.0, scale=1):
-        super().__init__()
-        if Obstacle.img_src is None:
-            Obstacle.img_src = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Object/IceBox.png").convert_alpha()
-            w, h = Obstacle.img_src.get_size()
-            Obstacle.img_src = pygame.transform.scale(Obstacle.img_src, (w // scale, h // scale))
-        self.image = Obstacle.img_src
-        self.x = x
-        self.y = y
-        self.vx = vx
-        self.vy = vy
-        self.av = av  # 각 속도 (angular velocity)
-        self.angle = 0.0
-        self.rect = self.image.get_rect()
-        self.rect.center = (self.x, self.y)
-
-    def update(self):
-        self.x += self.vx
-        self.y += self.vy
-        self.rect.center = (self.x, self.y)
-        self.angle -= self.av
-        self.image = pygame.transform.rotate(Obstacle.img_src, self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
-
-class Candy(pygame.sprite.Sprite):
-    img_src = []
-
-    def __init__(self, x, y, vx=0.0, vy=0.0, av=0.0, scale=1):
-        super().__init__()
-        if not Candy.img_src:
-            self.load_candy_images()
-        img_info = random.choice(Candy.img_src)
-        self.image = img_info['image']
-        self.color = img_info['color']
-        self.x = x
-        self.y = y
-        self.vx = vx
-        self.vy = vy
-        self.av = av  # 각 속도 (angular velocity)
-        self.angle = 0.0
-        self.rect = self.image.get_rect()
-        self.rect.center = (self.x, self.y)
-        self.candy_now = True
-        self.explosion_sprites = []
-
-    def load_candy_images(self):
-        candy_folder = "챕터09_게임프로그래밍/yaycandies/size1/"
-        for file_name in os.listdir(candy_folder):
-            color = None
-            if 'blue' in file_name:
-                color = "blue"
-            elif 'green' in file_name:
-                color = "green"
-            elif 'pink' in file_name:
-                color = "pink"
-            else:
-                color = "red"
-
-            if file_name.endswith(".png"):
-                img_path = os.path.join(candy_folder, file_name)
-                img = pygame.image.load(img_path).convert_alpha()
-                Candy.img_src.append({'image': img, 'color': color})
-
-    def update(self):
-        if self.candy_now:
-            self.x += self.vx
-            self.y += self.vy
-            self.rect.center = (self.x, self.y)
-            self.angle -= self.av
-            self.image = pygame.transform.rotate(self.image, self.angle)
+        self.sprite_id += self.ds
+        self.sprite_id %= len(self.sprites)
+        if self.angle != 0:
+            self.image = pygame.transform.rotate(
+                self.sprites[int(self.sprite_id)], self.angle
+            )
             self.rect = self.image.get_rect(center=self.rect.center)
         else:
-            sprites_id = 1
-            if sprites_id <= len(self.explosion_sprites):
-                self.image = pygame.transform.rotate(self.explosion_sprites[int(sprites_id)], self.angle)
-                sprites_id += 0.3
+            self.image = self.sprites[int(self.sprite_id)]
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.x, self.y)
+    def draw_rect(self, screen):
+        pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
-    def explosion_candy(self):
-        for i in range(1, 6):
-            img = pygame.image.load(f"챕터09_게임프로그래밍/yaycandies/size1_explosion/explosion{self.color}0{i}.png")
-            img = img.convert_alpha()
-            self.explosion_sprites.append(img)
-        self.remove()
-        self.candy_now = False
 
-class Santa(pygame.sprite.Sprite):
-    img_src = []
+class Bullet(MovingObject):
+    source_sprites = []
+    def __init__(self, x, y, **argx):
+        super().__init__(x, y, vx=20.0, av=-20.0, **argx)
+    def init_sprites(self):
+        if not Bullet.source_sprites:
+            img = pygame.image.load("챕터09_게임프로그래밍/present-gift-box-reward-full.png").convert_alpha()
+            w, h = img.get_size()
+            img = pygame.transform.scale(img, (w // 10, h // 10))
+            Bullet.source_sprites = [img]
+        return Bullet.source_sprites
 
+
+class Item(MovingObject):
+    source_sprites = []
+    IMAGE_FILENAMES = [
+        "챕터09_게임프로그래밍/yaycandies/size1/bean_blue.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/candycane.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/bean_green.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/bean_orange.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/candycorn.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/jelly_green.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/jelly_orange.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/candyhumbug.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/jellybig_yellow.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/lollipop_blue.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/lollipop_pink.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/swirl_red.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/wrappedsolid_purple.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/wrappedsolid_green.png",
+        "챕터09_게임프로그래밍/yaycandies/size1/wrappedtrans_yellow.png",
+    ]
     def __init__(self, x, y):
-        super().__init__()
-        if not Santa.img_src:
+        super().__init__(x, y, vx=-GROUND_SPEED)
+    def init_sprites(self):
+        if not Item.source_sprites:
+            for f in Item.IMAGE_FILENAMES:
+                i = pygame.image.load(f).convert_alpha()
+                Item.source_sprites.append(i)
+        return [random.choice(Item.source_sprites)]
+
+
+class Obstacle(MovingObject):
+    source_sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, vx=-GROUND_SPEED)
+    def init_sprites(self):
+        if not Obstacle.source_sprites:
+            Obstacle.source_sprites = [
+                pygame.image.load(
+                    "챕터09_게임프로그래밍/wintertileset/png/Object/IceBox.png",
+                ).convert_alpha()
+            ]
+        return Obstacle.source_sprites
+
+
+class Explosion(MovingObject):
+    source_sprites = []
+    def __init__(self, x, y, vx=-GROUND_SPEED):
+        super().__init__(x, y, ds=1.0)
+        self.count = 0
+    def init_sprites(self):
+        if not Explosion.source_sprites:
+            for i in range(1, 6):
+                img = pygame.image.load(
+                    f"챕터09_게임프로그래밍/yaycandies/size1_explosion/explosionred{str(i).zfill(2)}.png"
+                ).convert_alpha()
+                w, h = img.get_size()
+                img = pygame.transform.scale(img, (w, h))
+                Explosion.source_sprites.append(img)
+        return Explosion.source_sprites
+    def update(self):
+        super().update()
+        self.count += 1
+
+
+class Player(MovingObject):
+    source_sprites = []
+    def __init__(self):
+        super().__init__(240, 520, ds=1.0)
+    def init_sprites(self):
+        if not Player.source_sprites:
             for i in range(1, 12):
-                img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Run ({i}).png")
-                img = img.convert_alpha()
+                img = pygame.image.load(
+                    f"챕터09_게임프로그래밍/santasprites/png/Run ({i}).png"
+                ).convert_alpha()
                 w, h = img.get_size()
                 img = pygame.transform.scale(img, (w // 4, h // 4))
-                img = img.subsurface((25, 0, 130, 140))
-                Santa.img_src.append(img)
-        self.image = Santa.img_src[0]
-        self.santa_vx = x
-        self.santa_vy = 0.0
-        self.santa_sprites_id = 0
-        self.santa_rect = self.image.get_rect().move(x, y)
-        # 산타 피격 범위 / collid_santa 사각형을 산타 이미지의 중앙에 배치.
-        self.collid_santa = pygame.Rect(
-            x, y, 
-            self.santa_rect.width - 75, 
-            self.santa_rect.height
-        )
-        self.dt = 1.0 / 30.0  # 시간 간격 (게임에서는 가급적 생략)
-        self.gravity = 1000  # 중력 가속도 (적당한 숫자로 조절)
-        
+                rect = img.get_rect()
+                rect.width = 140
+                img = img.subsurface(rect)  # 이미지 여백이 너무 커서 축소
+                Player.source_sprites.append(img)
+        return Player.source_sprites
     def update(self):
-        self.santa_sprites_id += 0.3
-        self.santa_sprites_id %= len(Santa.img_src)
-        self.image = Santa.img_src[int(self.santa_sprites_id)]
-        self.santa_vy += self.gravity * self.dt  # 속도 증가 = 가속도 * 시간 간격
-        self.santa_rect.y += self.santa_vy * self.dt  # 위치 이동 = 속도 * 시간 간격
-        self.collid_santa.center = self.santa_rect.center  # 충돌 감지 사각형 위치 업데이트
-
-        # 바닥 충돌 반응
-        if self.santa_vy > 0 and self.santa_rect.bottom > ground_y:
-            self.santa_vy = 0  # 낙하 중지
-            self.santa_rect.bottom = ground_y
-            self.collid_santa.bottom = ground_y
-
+        self.vy += 0.8  # 중력
+        super().update()
+        # ground collision
+        if self.y >= 520 and self.vy > 0.0:
+            self.y = 520
+            self.vy = 0.0
     def jump(self):
-        self.santa_vy -= 800
+        self.vy = -15  # screen space
 
-    def draw_rect(self):
-        screen.blit(self.image, self.santa_rect)
+
+class Ground:
+    def __init__(self):
+        super().__init__()
+        self.sprites = [
+            self.load(f"챕터09_게임프로그래밍/wintertileset/png/Tiles/{i}.png", 2) for i in range(1, 19)
+        ]
+        self.x = 0
+    def load(self, filename, scale):
+        s = pygame.image.load(filename).convert_alpha()
+        w, h = s.get_size()
+        s = pygame.transform.scale(s, (w // scale, h // scale))
+        return s
+    def draw(self, screen):
+        for i in range(-1, 16):
+            screen.blit(self.sprites[1], (self.x + i * 64, 64 * 9))
+            screen.blit(self.sprites[4], (self.x + i * 64, 64 * 10))
+            screen.blit(self.sprites[4], (self.x + i * 64, 64 * 11))
+    def update(self):
+        self.x -= GROUND_SPEED
+        self.x %= 64
 
 
 pygame.init()
-
 screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
-clock = pygame.time.Clock()
-
-# 배경 음악
+background = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/BG/BG.png").convert_alpha()
 mixer.init()
 mixer.music.load("챕터09_게임프로그래밍/jingle-bells-violin-loop-8645.mp3")
 mixer.music.set_volume(0.1)
-mixer.music.play()
-# 사운드
-break_sound = mixer.Sound("챕터09_게임프로그래밍/422669__lynx_5969__ice-break-with-hand.wav")
-break_sound.set_volume(0.3)
-# https://freesound.org/people/soundmatch24/sounds/186876/
-game_over_sound = mixer.Sound("챕터09_게임프로그래밍/186876__soundmatch24__dead-walking.mp3")
-game_over_sound.set_volume(0.2)
-clear_sound = mixer.Sound("챕터09_게임프로그래밍/270402__littlerobotsoundfactory__jingle_win_00.wav")
-clear_sound.set_volume(0.3)
-# https://freesound.org/people/CJspellsfish/sounds/676402/
-point_sound = mixer.Sound("챕터09_게임프로그래밍/676402__cjspellsfish__score-2.mp3")
-point_sound.set_volume(0.4)
-
-# 배경 이미지
-background = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/BG/BG.png").convert()
-bgx = 0
-# 타일 이미지
-tile2 = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Tiles/2.png").convert_alpha()
-tile2 = pygame.transform.scale(tile2, (64, 64))  # 적당한 크기로 조정
-tile5 = pygame.image.load("챕터09_게임프로그래밍/wintertileset/png/Tiles/5.png").convert_alpha()
-tile5 = pygame.transform.scale(tile5, (64, 64))
-gx = 0
-
-# santa sprites
-santa = Santa(240, 440)
-santa_dead_sprites = []
-
-for i in range(1, 18):
-    dead_img = pygame.image.load(f"챕터09_게임프로그래밍/santasprites/png/Dead ({i}).png")
-    dead_img = dead_img.convert_alpha()
-    w, h = dead_img.get_size()
-    dead_img = pygame.transform.scale(dead_img, (w // 4, h // 4))
-    santa_dead_sprites.append(dead_img)
-
-santa_dead_sprites_id = 0
-
-bullet_group = pygame.sprite.Group()
-obstacles = pygame.sprite.Group()
-candies = pygame.sprite.Group()
-
-ground_y = 580  # 바닥 위치
-
-# Game Over or Cleared
-game_point = pygame.font.SysFont("system", 55)
-point = 0
-MAX_POINT = 50
-game_font = pygame.font.SysFont("system", 180)
-gametext = game_font.render("", 1, (0, 0, 0))
-
-running = True
-game_over = False
-
-while running:
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            quit = True
-            running = False
-        elif event.type == KEYUP and event.key == K_LCTRL and not game_over:
-            bullet_group.add(Bullet(santa.santa_rect.right, santa.santa_rect.centery))
-
-        elif event.type == KEYUP and event.key == K_SPACE and not game_over:
-            santa.jump()
-
-    if not game_over:
-        """업데이트"""
-        # 배경 및 산타 업데이트
-        bgx += 1
-        bgx %= background.get_width()
-
-        gx += 5
-        gx %= tile2.get_width()
-
-        santa.update()
-
-        # 장애물 및 총알 업데이트
-        bullet_group.update()
+title_snd = mixer.Sound(
+    "챕터09_게임프로그래밍/454786__carloscarty__silent-night-intro-pan-flute-glissando.wav"
+)
+# https://freesound.org/people/sounds-mp3/sounds/551326/
+hoho_snd = mixer.Sound("챕터09_게임프로그래밍/551326__sounds-mp3__santa-claus-laughing.mp3")
+item_snd = mixer.Sound("챕터09_게임프로그래밍/676402__cjspellsfish__score-2.mp3")
+item_snd.set_volume(0.5)
+break_snd = mixer.Sound("챕터09_게임프로그래밍/422669__lynx_5969__ice-break-with-hand.wav")
+die_snd = mixer.Sound("챕터09_게임프로그래밍/186876__soundmatch24__dead-walking.mp3")
+clear_snd = mixer.Sound("챕터09_게임프로그래밍/270402__littlerobotsoundfactory__jingle_win_00.wav")
+scorefont = pygame.font.SysFont("system", 48)
+titlefont = pygame.font.SysFont("system", 200)
+clock = pygame.time.Clock()
+quit = False
+while True:
+    running = True
+    bgx = 0
+    draw_rect = False
+    score = 0
+    pygame.event.clear()
+    santa = Player()
+    ground = Ground()
+    """ 시작 메뉴 보여주기 """
+    title_text = titlefont.render("Santa Run!", 1, (255, 255, 255))
+    comment_text = scorefont.render(
+        "Press any key to play",
+        1,
+        (255, 255, 255),
+    )
+    show_title = True
+    frame_count = 0
+    while show_title:
+        for event in pygame.event.get():
+            if event.type == KEYUP:
+                show_title = False
+        title_snd.set_volume(0.1)
+        title_snd.play()
+        screen.blit(background, (bgx, 0))
+        ground.draw(screen)
+        screen_width, screen_height = screen.get_size()
+        screen.blit(
+            title_text,
+            title_text.get_rect(center=(screen_width / 2, screen_height / 2 - 50)),
+        )
+        # 글자가 깜빡거리는 효과
+        if frame_count // 15 % 2 == 0:
+            screen.blit(
+                comment_text,
+                comment_text.get_rect(
+                    center=(screen_width / 2, screen_height / 2 + 100)
+                ),
+            )
+        pygame.display.flip()
+        clock.tick(30)
+        frame_count += 1
+    title_snd.stop()
+    """ 게임 """
+    items = pygame.sprite.Group()  # Candy
+    bullets = pygame.sprite.Group()
+    obstacles = pygame.sprite.Group()
+    explosions = pygame.sprite.Group()
+    moving_sprites = pygame.sprite.Group()
+    moving_sprites.add(santa)
+    mixer.music.play()
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit = True
+                running = False
+            elif event.type == KEYUP:
+                if event.key == K_SPACE:
+                    # hoho_snd.play(maxtime=2200)
+                    santa.jump()
+                elif event.key == K_LCTRL:
+                    new_bullet = Bullet(santa.x - 20, santa.y)
+                    bullets.add(new_bullet)
+        ground.update()
+        moving_sprites.update()
+        items.update()
         obstacles.update()
-        candies.update()
-
-        # 장애물 확률.
-        rand = random.random()
-        if  rand > 0.985:  # 프레임당 2%의 확률로 장애물 생성
-            obstacles.add(Obstacle(1000, 530, vx=-5))
-        # 캔디 확률
-        # rand -> 0.9501 ~ 0.9999 - 0.95
-        # => 0.0001 ~ 0.0499 * 10000 => int(1.xx ~ 499.xx) % 100 -> 1 ~ 99
-        if rand > 0.95:
-            candy_y = int((rand - 0.95) * 10000) % 200 + 250
-            candies.add(Candy(1000, candy_y, vx=-5))
-
-        if point >= MAX_POINT:
-            clear_sound.play()
-            gametext = game_font.render("Cleared", 1, (0, 0, 255))
-            game_over = True
-
-        for c in candies.copy():
-            if c.rect.right < 0:
-                candies.remove(c)
-
-            elif c.rect.colliderect(santa.santa_rect) and c.candy_now == True:
-                point_sound.play()
-                point += 1
-                c.explosion_candy()
-
-        for o in obstacles.copy():  # copy 주의
-            if o.rect.right < 0:
-                obstacles.remove(o)
-
-            # https://freesound.org/people/soundmatch24/sounds/186876/ => game_over sound
-            elif o.rect.colliderect(santa.collid_santa):
-                game_over_sound.play()
-                gametext = game_font.render("Game Over", 1, (255, 0, 0))
-                game_over = True
-
-            for b in bullet_group.copy():  # copy 주의
-                if b.rect.left > 1024:
-                    bullet_group.remove(b)
-
-                elif o.rect.colliderect(b.rect):
-                    break_sound.play()
+        bullets.update()
+        explosions.update()
+        if random.random() > 0.92:  # 아이템 생성
+            new_item = Item(1024, random.randint(150, 450))
+            items.add(new_item)
+        if random.random() > 0.96:  # 장애물 생성
+            new_obstacle = Obstacle(1024, 520)
+            obstacles.add(new_obstacle)
+        for i in items.copy():
+            if santa.rect.colliderect(i.rect):  # 산타와 아이템 충돌
+                score += 1
+                item_snd.play()
+                items.remove(i)
+            elif i.rect.right < 0:  # 화면을 벗어난 아이템 삭제
+                items.remove(i)
+        for e in explosions.copy():
+            if e.count >= 5:
+                explosions.remove(e)
+        for b in bullets.copy():
+            if b.rect.left > 1024:
+                bullets.remove(b)
+        for b in bullets.copy():
+            for o in obstacles.copy():
+                if b.rect.colliderect(o.rect):
+                    score += 1
+                    break_snd.play()
+                    exp = Explosion(b.x + 50, b.y)
+                    explosions.add(exp)
+                    bullets.remove(b)
                     obstacles.remove(o)
-                    bullet_group.remove(b)
-    # game over
-    else:
-        santa_dead_sprites_id += 0.3
-        if santa_dead_sprites_id >= len(santa_dead_sprites):
-            santa_dead_sprites_id = len(santa_dead_sprites) - 1
+        # Rendering
+        screen.blit(background, (bgx, 0))
+        screen.blit(background, (bgx - background.get_width(), 0))
+        bgx -= 0.01
+        bgx %= background.get_width()
+        ground.draw(screen)
+        moving_sprites.draw(screen)
+        items.draw(screen)
+        obstacles.draw(screen)
+        bullets.draw(screen)
+        explosions.draw(screen)
+        if draw_rect:
+            santa.draw_rect(screen)
+            for i in items:
+                i.draw_rect(screen)
+            for i in bullets:
+                i.draw_rect(screen)
+        scoretext = scorefont.render("Score: " + str(score), 1, (255, 255, 255))
+        screen.blit(scoretext, (700, 10))
+        # 게임 종료 조건
+        if score >= 100:  # 클리어
+            mixer.music.stop()
+            clear_snd.play()
+            clear_text = titlefont.render("Cleared!", 1, (255, 255, 255))
+            screen.blit(clear_text, (220, 220))
+            pygame.display.flip()
+            pygame.time.wait(int(clear_snd.get_length() * 1000))
+            running = False
+        else:  # 장애물에 부딪혀서 사망
+            for o in obstacles.copy():
+                if santa.rect.colliderect(o.rect):  # 산타와 장애물 충돌
+                    mixer.music.stop()
+                    die_snd.play()
+                    gameover_text = titlefont.render("Game Over", 1, (255, 0, 0))
+                    screen.blit(gameover_text, (120, 320))
+                    pygame.display.flip()
+                    pygame.time.wait(int(die_snd.get_length() * 1000))
+                    running = False
+                    break
+        pygame.display.flip()
+        clock.tick(30)
+    if quit:
+        break
 
-    """화면에 그리기"""
-    screen.fill((255, 255, 255))
-    # 배경 그리기
-    screen.blit(background, dest=(-bgx, 0))
-    screen.blit(background, dest=(-bgx + background.get_width(), 0))
-
-    # 바닥 타일 그리기
-    for i in range(-1, 17):
-        screen.blit(tile2, (-gx + i * 64, 64 * 9))
-        screen.blit(tile5, (-gx + i * 64, 64 * 10))
-        screen.blit(tile5, (-gx + i * 64, 64 * 11))
-
-    # 상자, 장애물 그리기
-    bullet_group.draw(screen)
-    obstacles.draw(screen)
-    candies.draw(screen)
-    
-    # 산타 그리기
-    if not game_over:
-        santa.draw_rect()
-    else:
-        mixer.music.stop()
-        if point >= MAX_POINT:
-            santa.draw_rect()
-        else:
-            screen.blit(santa_dead_sprites[int(santa_dead_sprites_id)], santa.santa_rect)
-
-    # 게임폰트 그리기
-    point_text = game_point.render(f"point = {point}", 1, (255, 228, 0))
-    screen.blit(point_text, (750, 10))
-    if game_over:
-        screen.blit(gametext, (200, int(screen.get_height() / 2 - 90)))
-
-    pygame.display.flip()
-    clock.tick(40)
 
 pygame.quit()
