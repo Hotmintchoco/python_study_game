@@ -40,19 +40,47 @@ class Menu:
         self.menu = pygame.Rect(700, 0, 500, 150)
         self.unit_img = self.load("menu/unit.png")
         self.turret_img = self.load("menu/turret.png")
-        self.turret_sell_img = self.load("menu/turret.png")
+        self.turret_sell_img = self.load("menu/turret_sell.png")
         self.upgrade_img = self.load("menu/upgrade.png")
+        self.gold_img = self.load("menu/gold.png")
         self.unit_select = False
         self.turret_select = False
         self.turret_sell_select = False
 
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
+        s = pygame.transform.scale(s, (48, 48))
         return s
 
     def draw(self, screen, collided, lmousedown):
-        pygame.draw.rect(screen, (255, 0, 0) if collided and lmousedown else (255, 220, 115), self.menu)
-        #screen.blit(self.menu, (1022, 0))
+        if collided and lmousedown:
+            pygame.draw.rect(screen, (255, 0, 0), self.menu)
+        else:
+            pygame.draw.rect(screen, (255, 220, 115), self.menu)
+        screen.blit(self.unit_img, (725, 60))
+        screen.blit(self.turret_img, (800, 60))
+        screen.blit(self.turret_sell_img, (875, 60))
+        screen.blit(self.upgrade_img, (950, 60))
+
+class Gold:
+    def __init__(self):
+        super().__init__()
+        self.gold_box = pygame.Rect(25, 10, 300, 100)
+        self.gold_img = self.load("menu/gold.png")
+        self.now = 200 
+    def load(self, filename):
+        s = pygame.image.load(filename).convert_alpha()
+        return s
+    
+    def update(self, get_gold):
+        self.now += get_gold
+
+    def draw(self, font):
+        pygame.draw.rect(screen, (134, 229, 127), self.gold_box)
+        gold_text = font.render(str(self.now), True, (255, 255, 255)) # menu
+        screen.blit(self.gold_img, (50, 30))
+        screen.blit(gold_text, (200, 50))
+
 
 class Ground:
     def __init__(self):
@@ -86,6 +114,7 @@ while True:
     bgx = 0  # background x
     ground = Ground()
     menu_bar = Menu()
+    gold = Gold()
     mixer.music.play(-1)
     while running:
         for event in pygame.event.get():
@@ -107,6 +136,7 @@ while True:
         screen.fill((255, 255, 255))
         screen.blit(background, dest=(-bgx, 0))
         ground.draw(screen, bgx)
+        gold.draw(menu_font)
         menu_bar.draw(screen, menu_bar.menu.collidepoint(point), lmousedown)
         screen.blit(menu_text, (725, 20))
         # 나의 나무
