@@ -34,6 +34,26 @@ class MoveObject(pygame.sprite.Sprite):
     def draw_rect(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
+class Menu:
+    def __init__(self):
+        super().__init__()
+        self.menu = pygame.Rect(700, 0, 500, 150)
+        self.unit_img = self.load("menu/unit.png")
+        self.turret_img = self.load("menu/turret.png")
+        self.turret_sell_img = self.load("menu/turret.png")
+        self.upgrade_img = self.load("menu/upgrade.png")
+        self.unit_select = False
+        self.turret_select = False
+        self.turret_sell_select = False
+
+    def load(self, filename):
+        s = pygame.image.load(filename).convert_alpha()
+        return s
+
+    def draw(self, screen, collided, lmousedown):
+        pygame.draw.rect(screen, (255, 0, 0) if collided and lmousedown else (255, 220, 115), self.menu)
+        #screen.blit(self.menu, (1022, 0))
+
 class Ground:
     def __init__(self):
         super().__init__()
@@ -55,7 +75,9 @@ mixer.init()
 mixer.music.load("608811__musicbymisterbates__uplifting-dramatic-soundtrack-war-around-us.mp3")
 mixer.music.set_volume(0.2)
 screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
+menu_font = pygame.font.SysFont("system", 40) # menu 폰트
 background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
+tree = pygame.image.load("background_tile/png/Objects/Tree.png").convert_alpha()
 clock = pygame.time.Clock()
 quit = False
 
@@ -63,6 +85,7 @@ while True:
     running = True
     bgx = 0  # background x
     ground = Ground()
+    menu_bar = Menu()
     mixer.music.play(-1)
     while running:
         for event in pygame.event.get():
@@ -72,6 +95,8 @@ while True:
 
         """업데이트"""
         point = pygame.mouse.get_pos()
+        lmousedown = pygame.mouse.get_pressed()[0]
+        menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
 
         if point[0] > 1019 and bgx < 249:
             bgx += GROUND_SPEED
@@ -82,6 +107,13 @@ while True:
         screen.fill((255, 255, 255))
         screen.blit(background, dest=(-bgx, 0))
         ground.draw(screen, bgx)
+        menu_bar.draw(screen, menu_bar.menu.collidepoint(point), lmousedown)
+        screen.blit(menu_text, (725, 20))
+        # 나의 나무
+        screen.blit(tree, dest=(-bgx-50, 450))
+        # 적의 나무
+        enemy_tree = pygame.transform.flip(tree, True, False)
+        screen.blit(enemy_tree, dest=(screen.get_width() - bgx, 450))
 
         pygame.display.flip()
         clock.tick(30)
