@@ -20,19 +20,44 @@ class MoveObject(pygame.sprite.Sprite):
     def init_sprites(self):
         raise NotImplementedError("init_sprites() not implemented")
     
-    def update(self):
+    def update(self, bgx):
         self.x += self.vx
         self.y += self.vy
         self.rect.center = (self.x, self.y)
-        self.sprite_id += self.ds
+        self.sprite_id += self.ds               
         self.sprite_id %= len(self.sprites)
 
         self.image = self.sprites[int(self.sprite_id)]
         self.rect = self.image.get_rect()
-        self.rect.center = (self.x, self.y)
+        self.rect.center = (self.x - bgx, self.y)
 
     def draw_rect(self, screen):
         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
+
+class Unit(MoveObject):
+    source_sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, vx = 1, ds=0.1)
+        print("Unit")
+    def init_sprites(self):
+        if not Unit.source_sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"Unit/Skeleton_Spearman/Skeleton_Run({index}).png"
+                    ).convert_alpha()
+                    Unit.source_sprites.append(img)
+                except:
+                    return Unit.source_sprites
+        return Unit.source_sprites
+    def update(self, bgx):
+        super().update(bgx)
+        # ground collision
+        if self.y >= 450 and self.vy > 0.0:
+            self.y = 450
+            self.vy = 0.0
 
 class Menu:
     def __init__(self):
@@ -43,24 +68,37 @@ class Menu:
         self.turret_sell_img = self.load("menu/turret_sell.png")
         self.upgrade_img = self.load("menu/upgrade.png")
         self.gold_img = self.load("menu/gold.png")
-        self.unit_select = False
-        self.turret_select = False
-        self.turret_sell_select = False
+
+        self.unit_img_rect = self.unit_img.get_rect(topleft=(725, 60))  # Unit image position
+        self.turret_img_rect = self.turret_img.get_rect(topleft=(800, 60))
+        self.turret_sell_img_rect = self.turret_sell_img.get_rect(topleft=(875, 60))
+        self.upgrade_img_rect = self.upgrade_img.get_rect(topleft=(950, 60))
 
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
         s = pygame.transform.scale(s, (48, 48))
         return s
 
-    def draw(self, screen, collided, lmousedown):
-        if collided and lmousedown:
-            pygame.draw.rect(screen, (255, 0, 0), self.menu)
-        else:
-            pygame.draw.rect(screen, (255, 220, 115), self.menu)
-        screen.blit(self.unit_img, (725, 60))
-        screen.blit(self.turret_img, (800, 60))
-        screen.blit(self.turret_sell_img, (875, 60))
-        screen.blit(self.upgrade_img, (950, 60))
+    def draw(self, screen):
+        pygame.draw.rect(screen, (255, 220, 115), self.menu)
+        screen.blit(self.unit_img, self.unit_img_rect.topleft)
+        screen.blit(self.turret_img, self.turret_img_rect.topleft)
+        screen.blit(self.turret_sell_img, self.turret_sell_img_rect.topleft)
+        screen.blit(self.upgrade_img, self.upgrade_img_rect.topleft)
+
+    def handle_click(self, pos):
+        if self.unit_img_rect.collidepoint(pos):
+            print("Unit clicked!")  # Replace this with the desired action
+            return Unit(240, 680)
+        elif self.turret_img_rect.collidepoint(pos):
+            print("Turret clicked!")
+            return None
+        elif self.turret_sell_img_rect.collidepoint(pos):
+            print("Turret Sell clicked!")
+            return None
+        elif self.upgrade_img_rect.collidepoint(pos):
+            print("Upgrade clicked!")
+            return None
 
 class Gold:
     def __init__(self):
@@ -115,13 +153,19 @@ while True:
     ground = Ground()
     menu_bar = Menu()
     gold = Gold()
+    unit_sprites = pygame.sprite.Group()
+    menu_click = None
     mixer.music.play(-1)
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit = True
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button click
+                menu_click = menu_bar.handle_click(event.pos)
 
+        if type(menu_click) == Unit:
+            unit_sprites.add(menu_click)
         """업데이트"""
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
@@ -131,19 +175,22 @@ while True:
             bgx += GROUND_SPEED
         elif point[0] < 5 and bgx > 0:
             bgx -= GROUND_SPEED
+        unit_sprites.update(bgx)
 
         """화면에 그리기"""
         screen.fill((255, 255, 255))
         screen.blit(background, dest=(-bgx, 0))
         ground.draw(screen, bgx)
         gold.draw(menu_font)
-        menu_bar.draw(screen, menu_bar.menu.collidepoint(point), lmousedown)
+        menu_bar.draw(screen)
         screen.blit(menu_text, (725, 20))
         # 나의 나무
         screen.blit(tree, dest=(-bgx-50, 450))
         # 적의 나무
         enemy_tree = pygame.transform.flip(tree, True, False)
         screen.blit(enemy_tree, dest=(screen.get_width() - bgx, 450))
+
+        unit_sprites.draw(screen)
 
         pygame.display.flip()
         clock.tick(30)
