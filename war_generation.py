@@ -38,7 +38,6 @@ class Unit(MoveObject):
     source_sprites = []
     def __init__(self, x, y):
         super().__init__(x, y, vx = 1, ds=0.1)
-        print("Unit")
     def init_sprites(self):
         if not Unit.source_sprites:
             index = 0
@@ -88,7 +87,6 @@ class Menu:
 
     def handle_click(self, pos):
         if self.unit_img_rect.collidepoint(pos):
-            print("Unit clicked!")  # Replace this with the desired action
             return Unit(240, 680)
         elif self.turret_img_rect.collidepoint(pos):
             print("Turret clicked!")
@@ -119,7 +117,6 @@ class Gold:
         screen.blit(self.gold_img, (50, 30))
         screen.blit(gold_text, (200, 50))
 
-
 class Ground:
     def __init__(self):
         super().__init__()
@@ -135,6 +132,22 @@ class Ground:
         for i in range(-1, 17):
             screen.blit(self.tile, (i * 64 - bgx % 64, 64 * 11))
 
+class Tree:
+    def __init__(self, x, y, flipped=False):
+        super().__init__()
+        self.img = self.load("background_tile/png/Objects/Tree.png")
+        self.x = x
+        self.y = y
+        if flipped:
+            self.img = pygame.transform.flip(self.img, True, False)
+
+    def load(self, filename):
+        s = pygame.image.load(filename).convert_alpha()
+        return s
+
+    def draw(self, screen, bgx):
+        screen.blit(self.img, (self.x - bgx, self.y))
+
 pygame.init()
 mixer.init()
 # https://freesound.org/people/MusicByMisterbates/sounds/608811/
@@ -143,7 +156,8 @@ mixer.music.set_volume(0.2)
 screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
 menu_font = pygame.font.SysFont("system", 40) # menu 폰트
 background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
-tree = pygame.image.load("background_tile/png/Objects/Tree.png").convert_alpha()
+tree = Tree(-50, 450)
+enemy_tree = Tree(screen.get_width() + 50, 450, flipped=True)
 clock = pygame.time.Clock()
 quit = False
 
@@ -175,6 +189,10 @@ while True:
             bgx += GROUND_SPEED
         elif point[0] < 5 and bgx > 0:
             bgx -= GROUND_SPEED
+
+        for unit in unit_sprites.copy():
+            if unit.x > 1100:
+                unit.vx = 0
         unit_sprites.update(bgx)
 
         """화면에 그리기"""
@@ -185,11 +203,9 @@ while True:
         menu_bar.draw(screen)
         screen.blit(menu_text, (725, 20))
         # 나의 나무
-        screen.blit(tree, dest=(-bgx-50, 450))
+        tree.draw(screen, bgx)
         # 적의 나무
-        enemy_tree = pygame.transform.flip(tree, True, False)
-        screen.blit(enemy_tree, dest=(screen.get_width() - bgx, 450))
-
+        enemy_tree.draw(screen, bgx)
         unit_sprites.draw(screen)
 
         pygame.display.flip()
