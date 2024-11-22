@@ -35,29 +35,47 @@ class MoveObject(pygame.sprite.Sprite):
         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 class Unit(MoveObject):
-    source_sprites = []
-    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton_Run"):
+    run_sprites = []
+    attack_sprites = []
+    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
         self.img_file = img_file
+        self.attack = False
+        self.attack_sprites = self.get_sprites()
         super().__init__(x, y, vx = 1.5, ds=0.1)
     def init_sprites(self):
-        if not Unit.source_sprites:
+        if not Unit.run_sprites:
             index = 0
             while True:
                 try:
                     index += 1
                     img = pygame.image.load(
-                        f"{self.img_file}({index}).png"
+                        f"{self.img_file}_Run({index}).png"
                     ).convert_alpha()
-                    Unit.source_sprites.append(img)
+                    Unit.run_sprites.append(img)
                 except:
-                    return Unit.source_sprites
-        return Unit.source_sprites
+                    return Unit.run_sprites
+                
+        return Unit.run_sprites
+        
+    def get_sprites(self):
+        if not Unit.attack_sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"{self.img_file}_attack({index}).png"
+                    ).convert_alpha()
+                    Unit.attack_sprites.append(img)
+                except:
+                    return Unit.attack_sprites
+
     def update(self, bgx):
+        if self.attack:
+            self.sprites = Unit.attack_sprites
+        else:
+            self.sprites = Unit.run_sprites
         super().update(bgx)
-        # ground collision
-        if self.y >= 450 and self.vy > 0.0:
-            self.y = 450
-            self.vy = 0.0
 
 class Menu:
     def __init__(self):
@@ -211,6 +229,7 @@ while True:
         for unit in unit_sprites.copy():
             if unit.x > 1100:
                 unit.vx = 0
+                unit.attack = True
         unit_sprites.update(bgx)
 
         """화면에 그리기"""
