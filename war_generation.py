@@ -36,8 +36,9 @@ class MoveObject(pygame.sprite.Sprite):
 
 class Unit(MoveObject):
     source_sprites = []
-    def __init__(self, x, y):
-        super().__init__(x, y, vx = 1, ds=0.1)
+    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton_Run"):
+        self.img_file = img_file
+        super().__init__(x, y, vx = 1.5, ds=0.1)
     def init_sprites(self):
         if not Unit.source_sprites:
             index = 0
@@ -45,7 +46,7 @@ class Unit(MoveObject):
                 try:
                     index += 1
                     img = pygame.image.load(
-                        f"Unit/Skeleton_Spearman/Skeleton_Run({index}).png"
+                        f"{self.img_file}({index}).png"
                     ).convert_alpha()
                     Unit.source_sprites.append(img)
                 except:
@@ -62,40 +63,56 @@ class Menu:
     def __init__(self):
         super().__init__()
         self.menu = pygame.Rect(700, 0, 500, 150)
-        self.unit_img = self.load("menu/unit.png")
-        self.turret_img = self.load("menu/turret.png")
-        self.turret_sell_img = self.load("menu/turret_sell.png")
-        self.upgrade_img = self.load("menu/upgrade.png")
-        self.gold_img = self.load("menu/gold.png")
+        self.main_menu()
+        self.unit_menu = False
 
-        self.unit_img_rect = self.unit_img.get_rect(topleft=(725, 60))  # Unit image position
-        self.turret_img_rect = self.turret_img.get_rect(topleft=(800, 60))
-        self.turret_sell_img_rect = self.turret_sell_img.get_rect(topleft=(875, 60))
-        self.upgrade_img_rect = self.upgrade_img.get_rect(topleft=(950, 60))
+        self.first_img_rect = self.first_img.get_rect(topleft=(725, 60))  # Unit image position
+        self.second_img_rect = self.second_img.get_rect(topleft=(800, 60))
+        self.third_img_rect = self.third_img.get_rect(topleft=(875, 60))
+        self.forth_img_rect = self.forth_img.get_rect(topleft=(950, 60))
 
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
         s = pygame.transform.scale(s, (48, 48))
         return s
+    
+    # 메인 메뉴의 이미지들
+    def main_menu(self):
+        self.first_img = self.load("menu/unit.png")
+        self.second_img = self.load("menu/turret.png")
+        self.third_img = self.load("menu/turret_sell.png")
+        self.forth_img = self.load("menu/upgrade.png")
+        self.gold_img = self.load("menu/gold.png")
+
+    def unit_click(self):
+        self.second_img = self.load("menu/unit.png")
+        self.third_img = self.load("menu/unit.png")
+        self.forth_img = self.load("menu/unit.png")
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 220, 115), self.menu)
-        screen.blit(self.unit_img, self.unit_img_rect.topleft)
-        screen.blit(self.turret_img, self.turret_img_rect.topleft)
-        screen.blit(self.turret_sell_img, self.turret_sell_img_rect.topleft)
-        screen.blit(self.upgrade_img, self.upgrade_img_rect.topleft)
+        screen.blit(self.first_img, self.first_img_rect.topleft)
+        screen.blit(self.second_img, self.second_img_rect.topleft)
+        screen.blit(self.third_img, self.third_img_rect.topleft)
+        screen.blit(self.forth_img, self.forth_img_rect.topleft)
 
     def handle_click(self, pos):
-        if self.unit_img_rect.collidepoint(pos):
-            return Unit(240, 680)
-        elif self.turret_img_rect.collidepoint(pos):
+        if self.first_img_rect.collidepoint(pos):
+            if self.unit_menu:
+                return Unit(240, 680)
+            self.unit_menu = True
+            self.unit_click()
+            return None
+        elif self.second_img_rect.collidepoint(pos):
             print("Turret clicked!")
             return None
-        elif self.turret_sell_img_rect.collidepoint(pos):
+        elif self.third_img_rect.collidepoint(pos):
             print("Turret Sell clicked!")
             return None
-        elif self.upgrade_img_rect.collidepoint(pos):
-            print("Upgrade clicked!")
+        elif self.forth_img_rect.collidepoint(pos):
+            if self.unit_menu:
+                self.main_menu()
+                self.unit_menu = False
             return None
 
 class Gold:
