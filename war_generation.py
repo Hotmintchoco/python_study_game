@@ -85,9 +85,10 @@ class Menu:
         self.gold_img = self.load("menu/gold.png")
 
     def unit_click(self):
-        self.second_img = self.load("menu/unit.png")
-        self.third_img = self.load("menu/unit.png")
-        self.forth_img = self.load("menu/unit.png")
+        self.first_img = self.load("menu/Skeleton_Warrior.png")
+        self.second_img = self.load("menu/Skeleton_Archer.png")
+        self.third_img = self.load("menu/Skeleton_Spear.png")
+        self.forth_img = self.load("menu/Return.png")
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 220, 115), self.menu)
