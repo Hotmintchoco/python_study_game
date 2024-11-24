@@ -102,6 +102,7 @@ class Skeleton_Archer(Unit):
             self.attack_sprites = Skeleton_Archer.attack_sprites
         super().__init__(x, y, img_file)
         self.is_shot = True
+        self.ds = 0.2
 
 class Skeleton_Spear(Unit):
     run_sprites = []
@@ -115,6 +116,16 @@ class Skeleton_Spear(Unit):
             self.attack_sprites = Skeleton_Spear.attack_sprites
         super().__init__(x, y, img_file)
 
+class Arrow(MoveObject):
+    source_sprites = []
+    def __init__(self, x, y, **argx):
+        super().__init__(x, y, vx=10.0, **argx)
+    def init_sprites(self):
+        if not Arrow.source_sprites:
+            img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
+            Arrow.source_sprites = [img]
+        return Arrow.source_sprites
+    
 class Menu:
     def __init__(self):
         super().__init__()
@@ -164,7 +175,7 @@ class Menu:
         elif self.second_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= 100:
                 Gold.now -= 100
-                return Skeleton_Archer(240, 680)
+                return Skeleton_Archer(240, 675)
             return None
         elif self.third_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= 100:
@@ -180,7 +191,6 @@ class Menu:
 class Gold:
     now = 10000
     def __init__(self):
-        super().__init__()
         self.gold_box = pygame.Rect(25, 10, 300, 100)
         self.gold_img = self.load("menu/gold.png")
     def load(self, filename):
@@ -198,7 +208,6 @@ class Gold:
 
 class Ground:
     def __init__(self):
-        super().__init__()
         self.tile = self.load("background_tile/png/Tile/2.png")
         self.x = 0
 
@@ -213,7 +222,6 @@ class Ground:
 
 class Tree:
     def __init__(self, x, y, flipped=False):
-        super().__init__()
         self.img = self.load("background_tile/png/Objects/Tree.png")
         self.x = x
         self.y = y
@@ -247,6 +255,7 @@ while True:
     menu_bar = Menu()
     gold = Gold()
     unit_sprites = pygame.sprite.Group()
+    arrows = pygame.sprite.Group()
     menu_click = None
     mixer.music.play(-1)
     while running:
@@ -271,13 +280,23 @@ while True:
             bgx -= GROUND_SPEED
 
         for unit in unit_sprites.copy():
-            if unit.x > 975 and unit.is_shot:
+            if unit.x > 300 and unit.is_shot:
                 unit.vx = 0
                 unit.attack = True
+                if 12 < unit.sprite_id < 12.2:
+                    print("푸슝~")
+                    new_arrow = Arrow(unit.x-5, unit.y-10)
+                    arrows.add(new_arrow)
             if unit.x > 1100 and not unit.is_shot:
                 unit.vx = 0
                 unit.attack = True
+        
+        for arrow in arrows.copy():
+            if arrow.x > 550:
+                arrows.remove(arrow)
+
         unit_sprites.update(bgx)
+        arrows.update(bgx)
 
         """화면에 그리기"""
         screen.fill((255, 255, 255))
@@ -291,6 +310,7 @@ while True:
         # 적의 나무
         enemy_tree.draw(screen, bgx)
         unit_sprites.draw(screen)
+        arrows.draw(screen)
 
         pygame.display.flip()
         clock.tick(30)
