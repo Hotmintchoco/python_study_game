@@ -35,15 +35,15 @@ class MoveObject(pygame.sprite.Sprite):
         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 class Unit(MoveObject):
-    run_sprites = []
-    attack_sprites = []
-    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
+    def __init__(self, x, y, img_file):
+        # self.run_sprites = []
         self.img_file = img_file
         self.attack = False
+        self.run_sprites = self.init_sprites()
         self.attack_sprites = self.get_sprites()
         super().__init__(x, y, vx = 1.5, ds=0.1)
     def init_sprites(self):
-        if not Unit.run_sprites:
+        if not self.run_sprites:
             index = 0
             while True:
                 try:
@@ -51,14 +51,14 @@ class Unit(MoveObject):
                     img = pygame.image.load(
                         f"{self.img_file}_Run({index}).png"
                     ).convert_alpha()
-                    Unit.run_sprites.append(img)
+                    self.run_sprites.append(img)
                 except:
-                    return Unit.run_sprites
+                    break
                 
-        return Unit.run_sprites
+        return self.run_sprites
         
     def get_sprites(self):
-        if not Unit.attack_sprites:
+        if not self.attack_sprites:
             index = 0
             while True:
                 try:
@@ -66,16 +66,46 @@ class Unit(MoveObject):
                     img = pygame.image.load(
                         f"{self.img_file}_attack({index}).png"
                     ).convert_alpha()
-                    Unit.attack_sprites.append(img)
+                    self.attack_sprites.append(img)
                 except:
-                    return Unit.attack_sprites
-
+                    break
+        return self.attack_sprites
+    
     def update(self, bgx):
         if self.attack:
-            self.sprites = Unit.attack_sprites
+            self.sprites = self.attack_sprites
         else:
-            self.sprites = Unit.run_sprites
+            self.sprites = self.run_sprites
         super().update(bgx)
+
+class Skeleton_Warrior(Unit):
+    run_sprites = []
+    attack_sprites = []
+
+    def __init__(self, x, y, img_file):
+        if Skeleton_Warrior.run_sprites:
+            self.run_sprites = Skeleton_Warrior.run_sprites
+        super().__init__(x, y, img_file)
+
+        if Skeleton_Warrior.attack_sprites:
+            self.attack_sprites = Skeleton_Warrior.attack_sprites
+        super().__init__(x, y, img_file)
+
+class Skeleton_Spear(Unit):
+    run_sprites = []
+    attack_sprites = []
+
+    def __init__(self, x, y, img_file):
+        if Skeleton_Spear.run_sprites:
+            self.run_sprites = Skeleton_Spear.run_sprites
+        super().__init__(x, y, img_file)
+
+        if Skeleton_Spear.attack_sprites:
+            self.attack_sprites = Skeleton_Spear.attack_sprites
+        super().__init__(x, y, img_file)
+
+    def update(self, bgx):
+        return super().update(bgx)
 
 class Menu:
     def __init__(self):
@@ -117,8 +147,10 @@ class Menu:
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
-            if self.unit_menu:
-                return Unit(240, 680)
+            if self.unit_menu and Gold.now >= 100:
+                Gold.now -= 100
+                first_img_file = "Unit/Skeleton_Warrior/Skeleton"
+                return Skeleton_Warrior(240, 680, img_file=first_img_file)
             self.unit_menu = True
             self.unit_click()
             return None
@@ -126,7 +158,10 @@ class Menu:
             print("Turret clicked!")
             return None
         elif self.third_img_rect.collidepoint(pos):
-            print("Turret Sell clicked!")
+            if self.unit_menu and Gold.now >= 100:
+                Gold.now -= 100
+                third_img_file = "Unit/Skeleton_Spearman/Skeleton"
+                return Skeleton_Spear(240, 680, img_file=third_img_file)
             return None
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
@@ -135,21 +170,21 @@ class Menu:
             return None
 
 class Gold:
+    now = 10000
     def __init__(self):
         super().__init__()
         self.gold_box = pygame.Rect(25, 10, 300, 100)
         self.gold_img = self.load("menu/gold.png")
-        self.now = 200 
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
         return s
     
     def update(self, get_gold):
-        self.now += get_gold
+        Gold.now += get_gold
 
     def draw(self, font):
         pygame.draw.rect(screen, (134, 229, 127), self.gold_box)
-        gold_text = font.render(str(self.now), True, (255, 255, 255)) # menu
+        gold_text = font.render(str(Gold.now), True, (255, 255, 255)) # menu
         screen.blit(self.gold_img, (50, 30))
         screen.blit(gold_text, (200, 50))
 
@@ -216,6 +251,10 @@ while True:
 
         if type(menu_click) == Unit:
             unit_sprites.add(menu_click)
+
+        if isinstance(menu_click, Unit):
+            unit_sprites.add(menu_click)
+
         """업데이트"""
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
