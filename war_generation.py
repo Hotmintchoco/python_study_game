@@ -39,6 +39,7 @@ class Unit(MoveObject):
         # self.run_sprites = []
         self.img_file = img_file
         self.attack = False
+        self.is_shot = False
         self.run_sprites = self.init_sprites()
         self.attack_sprites = self.get_sprites()
         super().__init__(x, y, vx = 1.5, ds=0.1)
@@ -53,8 +54,7 @@ class Unit(MoveObject):
                     ).convert_alpha()
                     self.run_sprites.append(img)
                 except:
-                    break
-                
+                    break                
         return self.run_sprites
         
     def get_sprites(self):
@@ -82,30 +82,38 @@ class Skeleton_Warrior(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, img_file):
+    def __init__(self, x, y, img_file="Unit/Skeleton_Warrior/Skeleton"):
         if Skeleton_Warrior.run_sprites:
             self.run_sprites = Skeleton_Warrior.run_sprites
-        super().__init__(x, y, img_file)
 
         if Skeleton_Warrior.attack_sprites:
             self.attack_sprites = Skeleton_Warrior.attack_sprites
         super().__init__(x, y, img_file)
 
+class Skeleton_Archer(Unit):
+    run_sprites = []
+    attack_sprites = []
+
+    def __init__(self, x, y, img_file="Unit/Skeleton_Archer/Skeleton"):
+        if Skeleton_Archer.run_sprites:
+            self.run_sprites = Skeleton_Archer.run_sprites
+
+        if Skeleton_Archer.attack_sprites:
+            self.attack_sprites = Skeleton_Archer.attack_sprites
+        super().__init__(x, y, img_file)
+        self.is_shot = True
+
 class Skeleton_Spear(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, img_file):
+    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
         if Skeleton_Spear.run_sprites:
             self.run_sprites = Skeleton_Spear.run_sprites
-        super().__init__(x, y, img_file)
 
         if Skeleton_Spear.attack_sprites:
             self.attack_sprites = Skeleton_Spear.attack_sprites
         super().__init__(x, y, img_file)
-
-    def update(self, bgx):
-        return super().update(bgx)
 
 class Menu:
     def __init__(self):
@@ -149,19 +157,19 @@ class Menu:
         if self.first_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= 100:
                 Gold.now -= 100
-                first_img_file = "Unit/Skeleton_Warrior/Skeleton"
-                return Skeleton_Warrior(240, 680, img_file=first_img_file)
+                return Skeleton_Warrior(240, 680)
             self.unit_menu = True
             self.unit_click()
             return None
         elif self.second_img_rect.collidepoint(pos):
-            print("Turret clicked!")
+            if self.unit_menu and Gold.now >= 100:
+                Gold.now -= 100
+                return Skeleton_Archer(240, 680)
             return None
         elif self.third_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= 100:
                 Gold.now -= 100
-                third_img_file = "Unit/Skeleton_Spearman/Skeleton"
-                return Skeleton_Spear(240, 680, img_file=third_img_file)
+                return Skeleton_Spear(240, 680)
             return None
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
@@ -249,9 +257,6 @@ while True:
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button click
                 menu_click = menu_bar.handle_click(event.pos)
 
-        if type(menu_click) == Unit:
-            unit_sprites.add(menu_click)
-
         if isinstance(menu_click, Unit):
             unit_sprites.add(menu_click)
 
@@ -266,7 +271,10 @@ while True:
             bgx -= GROUND_SPEED
 
         for unit in unit_sprites.copy():
-            if unit.x > 1100:
+            if unit.x > 975 and unit.is_shot:
+                unit.vx = 0
+                unit.attack = True
+            if unit.x > 1100 and not unit.is_shot:
                 unit.vx = 0
                 unit.attack = True
         unit_sprites.update(bgx)
