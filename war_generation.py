@@ -1,4 +1,5 @@
 import pygame
+import random
 from pygame import mixer
 
 GROUND_SPEED = 7.5
@@ -35,14 +36,15 @@ class MoveObject(pygame.sprite.Sprite):
         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 class Unit(MoveObject):
-    def __init__(self, x, y, img_file):
+    def __init__(self, x, y, img_file, flipped=False, is_shot=False, unit_vx=1.5, unit_ds=0.1):
         # self.run_sprites = []
         self.img_file = img_file
         self.attack = False
-        self.is_shot = False
+        self.is_shot = is_shot
+        self.flipped = flipped
         self.run_sprites = self.init_sprites()
         self.attack_sprites = self.get_sprites()
-        super().__init__(x, y, vx = 1.5, ds=0.1)
+        super().__init__(x, y, vx=unit_vx, ds=unit_ds)
     def init_sprites(self):
         if not self.run_sprites:
             index = 0
@@ -52,6 +54,8 @@ class Unit(MoveObject):
                     img = pygame.image.load(
                         f"{self.img_file}_Run({index}).png"
                     ).convert_alpha()
+                    if self.flipped:
+                        img = pygame.transform.flip(img, True, False)
                     self.run_sprites.append(img)
                 except:
                     break                
@@ -66,6 +70,8 @@ class Unit(MoveObject):
                     img = pygame.image.load(
                         f"{self.img_file}_attack({index}).png"
                     ).convert_alpha()
+                    if self.flipped:
+                        img = pygame.transform.flip(img, True, False)
                     self.attack_sprites.append(img)
                 except:
                     break
@@ -100,8 +106,7 @@ class Skeleton_Archer(Unit):
 
         if Skeleton_Archer.attack_sprites:
             self.attack_sprites = Skeleton_Archer.attack_sprites
-        super().__init__(x, y, img_file)
-        self.is_shot = True
+        super().__init__(x, y, img_file, is_shot=True)
         self.ds = 0.2
 
 class Skeleton_Spear(Unit):
@@ -115,6 +120,18 @@ class Skeleton_Spear(Unit):
         if Skeleton_Spear.attack_sprites:
             self.attack_sprites = Skeleton_Spear.attack_sprites
         super().__init__(x, y, img_file)
+
+class Enemy_Skeleton_Warrior(Unit):
+    run_sprites = []
+    attack_sprites = []
+
+    def __init__(self, x, y, img_file="Unit/Skeleton_Warrior/Skeleton"):
+        if Skeleton_Warrior.run_sprites:
+            self.run_sprites = Skeleton_Warrior.run_sprites
+
+        if Skeleton_Warrior.attack_sprites:
+            self.attack_sprites = Skeleton_Warrior.attack_sprites
+        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
 
 class Arrow(MoveObject):
     source_sprites = []
@@ -255,6 +272,7 @@ while True:
     menu_bar = Menu()
     gold = Gold()
     unit_sprites = pygame.sprite.Group()
+    enemy_units = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
     menu_click = None
     mixer.music.play(-1)
@@ -263,8 +281,13 @@ while True:
             if event.type == pygame.QUIT:
                 quit = True
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button click
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                  # Left mouse button click
                 menu_click = menu_bar.handle_click(event.pos)
+
+        if random.random() > 0.992 and len(enemy_units) < 6:
+            enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+            enemy_units.add(enemy_unit)
 
         if isinstance(menu_click, Unit):
             unit_sprites.add(menu_click)
@@ -284,18 +307,23 @@ while True:
                 unit.vx = 0
                 unit.attack = True
                 if 12 < unit.sprite_id < 12.2:
-                    print("푸슝~")
                     new_arrow = Arrow(unit.x-5, unit.y-10)
                     arrows.add(new_arrow)
             if unit.x > 1100 and not unit.is_shot:
                 unit.vx = 0
                 unit.attack = True
         
+        for enemy in enemy_units.copy():
+            if enemy.x < 600:
+                enemy.vx = 0
+                enemy.attack = True
+
         for arrow in arrows.copy():
             if arrow.x > 550:
                 arrows.remove(arrow)
 
         unit_sprites.update(bgx)
+        enemy_units.update(bgx)
         arrows.update(bgx)
 
         """화면에 그리기"""
@@ -310,6 +338,7 @@ while True:
         # 적의 나무
         enemy_tree.draw(screen, bgx)
         unit_sprites.draw(screen)
+        enemy_units.draw(screen)
         arrows.draw(screen)
 
         pygame.display.flip()
