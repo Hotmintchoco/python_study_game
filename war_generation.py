@@ -36,13 +36,12 @@ class MoveObject(pygame.sprite.Sprite):
         pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 class Unit(MoveObject):
-    def __init__(self, x, y, img_file, flipped=False, is_enemy=False, is_shot=False,
+    def __init__(self, x, y, img_file, flipped=False, is_shot=False,
                   unit_vx=1.5, unit_ds=0.1):
         self.img_file = img_file
         self.attack = False
         self.is_shot = is_shot
         self.flipped = flipped
-        self.is_enemy = is_enemy
         self.hp = 50
         self.damage = 50
         self.created_time = pygame.time.get_ticks()  # 생성 시각 추가
@@ -136,7 +135,7 @@ class Enemy_Skeleton_Warrior(Unit):
 
         if Enemy_Skeleton_Warrior.attack_sprites:
             self.attack_sprites = Enemy_Skeleton_Warrior.attack_sprites
-        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, is_enemy=True)
+        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
 
 class Arrow(MoveObject):
     source_sprites = []
@@ -268,16 +267,13 @@ def handle_timer_events():
             enemy.vx = -1.5  # 다시 이동
 
 # 유닛들이 겹치지 않게 하는 코드            
-def unit_collide_check(unit_sprites, unit, is_enemy):
+def unit_collide_check(unit_sprites, unit):
     collided_sprites = pygame.sprite.spritecollide(unit, unit_sprites, False)
     for collided_unit in collided_sprites:
         if collided_unit.created_time > unit.created_time:
             collided_unit.vx = 0
             # 일정 시간이 지나면 다시 이동하도록 타이머 설정
-            if not is_enemy:
-                pygame.time.set_timer(pygame.USEREVENT + 1, 1, True)
-            else:
-                pygame.time.set_timer(pygame.USEREVENT + 2, 1, True)
+            pygame.time.set_timer(pygame.USEREVENT + 1, 1, True)
 
 pygame.init()
 mixer.init()
@@ -311,7 +307,7 @@ while True:
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 # Left mouse button click
                 menu_click = menu_bar.handle_click(event.pos)
-            elif event.type == pygame.USEREVENT + 1 or event.type == pygame.USEREVENT + 2:
+            elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
 
         if random.random() > 0.98 and len(enemy_units) < 6:
@@ -333,7 +329,7 @@ while True:
 
         for unit in unit_sprites.copy():
             # 유닛들이 겹치지 않게 하는 코드
-            unit_collide_check(unit_sprites, unit, unit.is_enemy)
+            unit_collide_check(unit_sprites, unit)
             if unit.x > 300 and unit.is_shot:
                 unit.vx = 0
                 unit.attack = True
@@ -345,7 +341,7 @@ while True:
                 unit.attack = True
         
         for enemy in enemy_units.copy():
-            unit_collide_check(enemy_units, enemy, enemy.is_enemy)
+            unit_collide_check(enemy_units, enemy)
             if enemy.x < 600:
                 enemy.vx = 0
                 enemy.attack = True
