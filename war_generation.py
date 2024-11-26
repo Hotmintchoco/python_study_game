@@ -90,12 +90,11 @@ class Unit(MoveObject):
         self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp, 5)
     
     def fighting(self, enemy):
-        if self.rect.colliderect(enemy.rect) and not self.is_shot:
+        if self.rect.colliderect(enemy.rect) and not self.is_shot and enemy.hp > 0:
             self.vx = 0
             self.attack = True
             if 3 < self.sprite_id < 3.1:
                 enemy.hp -= self.damage
-    
 
     def unit_hp_draw(self, pos):
         if self.rect.collidepoint(pos):
@@ -125,7 +124,7 @@ class Skeleton_Archer(Unit):
         if Skeleton_Archer.attack_sprites:
             self.attack_sprites = Skeleton_Archer.attack_sprites
         super().__init__(x, y, img_file, is_shot=True)
-        self.ds = 0.2
+        self.ds = 0.19
 
 class Skeleton_Spear(Unit):
     run_sprites = []
@@ -305,13 +304,6 @@ enemy_tree = Tree(screen.get_width() + 50, 450, flipped=True)
 clock = pygame.time.Clock()
 quit = False
 
-def unit_fighting(unit, enemy):
-    if unit.x + 50 > enemy.x and not unit.is_shot:
-        unit.vx = 0
-        unit.attack = True
-        if 3 < unit.sprite_id < 3.1:
-            enemy.hp -= unit.damage
-
 while True:
     running = True
     bgx = 0  # background x
@@ -334,7 +326,7 @@ while True:
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
 
-        if random.random() > 0.98 and len(enemy_units) < 6:
+        if random.random() > 0.994 and len(enemy_units) < 6:
             enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             enemy_units.add(enemy_unit)
 
@@ -354,22 +346,29 @@ while True:
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
             for enemy in enemy_units.copy():
+                if unit.hp <= 0:
+                    unit_sprites.remove(unit)
+                    enemy.attack = False
+                if enemy.hp <= 0:
+                    enemy_units.remove(enemy)
+                    unit.attack = False
+                
                 if unit.is_shot and (unit.x + 200) > enemy.x:
                     unit.vx = 0
                     unit.attack = True
                     if 12 < unit.sprite_id < 12.2:
                         new_arrow = Arrow(unit.x-5, unit.y-10)
                         arrows.add(new_arrow)
+                        print(unit.sprite_id)
                 for arrow in arrows.copy():
                     if arrow.x > enemy.x - 10:
-                        arrows.remove(arrow)
                         enemy.hp -= arrow.damage
+                        arrows.remove(arrow)
+                        print(enemy.hp)
                 unit.fighting(enemy)
 
                 unit_collide_check(enemy_units, enemy)
                 enemy.fighting(unit)
-
-            
 
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
