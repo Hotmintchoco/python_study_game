@@ -89,12 +89,22 @@ class Unit(MoveObject):
         super().update(bgx)
         self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp, 5)
     
-    def fighting(self, enemy):
+    def fighting(self, enemy, shot_complition):
         if self.rect.colliderect(enemy.rect) and not self.is_shot and enemy.hp > 0:
             self.vx = 0
             self.attack = True
             if 3 < self.sprite_id < 3.1:
                 enemy.hp -= self.damage
+            return True
+        elif self.is_shot and unit.x + 200 > enemy.x:
+            self.vx = 0
+            self.attack = True
+            if 12.01 < self.sprite_id < 12.2 and shot_complition == 0:
+                new_arrow = Arrow(unit.x-5, unit.y-10)
+                arrows.add(new_arrow)
+                print(unit.sprite_id)
+            return True
+        
 
     def unit_hp_draw(self, pos):
         if self.rect.collidepoint(pos):
@@ -326,7 +336,7 @@ while True:
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
 
-        if random.random() > 0.994 and len(enemy_units) < 6:
+        if random.random() > 0.992 and len(enemy_units) < 6:
             enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             enemy_units.add(enemy_unit)
 
@@ -334,9 +344,11 @@ while True:
             unit_sprites.add(menu_click)
 
         """업데이트"""
+        
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
         menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
+        shot_complition = False
 
         if point[0] > 1019 and bgx < 249:
             bgx += GROUND_SPEED
@@ -354,23 +366,16 @@ while True:
                     enemy_units.remove(enemy)
                     unit.attack = False
                     unit.vx = 1.5
-                
-                if unit.is_shot and (unit.x + 200) > enemy.x:
-                    unit.vx = 0
-                    unit.attack = True
-                    if 12 < unit.sprite_id < 12.2:
-                        new_arrow = Arrow(unit.x-5, unit.y-10)
-                        arrows.add(new_arrow)
-                        print(unit.sprite_id)
+
+                shot_complition = unit.fighting(enemy, shot_complition)
+                unit_collide_check(enemy_units, enemy)
+                shot_complition = enemy.fighting(unit, shot_complition)
+
                 for arrow in arrows.copy():
                     if arrow.x > enemy.x - 10:
                         enemy.hp -= arrow.damage
                         arrows.remove(arrow)
                         print(enemy.hp)
-                unit.fighting(enemy)
-
-                unit_collide_check(enemy_units, enemy)
-                enemy.fighting(unit)
 
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
