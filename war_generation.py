@@ -333,28 +333,26 @@ while True:
             bgx -= GROUND_SPEED
 
         for unit in unit_sprites.copy():
-            # 유닛들이 겹치지 않게 하는 코드
             unit_collide_check(unit_sprites, unit)
-            if unit.x > 300 and unit.is_shot:
-                unit.vx = 0
-                unit.attack = True
-                if 12 < unit.sprite_id < 12.2:
-                    new_arrow = Arrow(unit.x-5, unit.y-10)
-                    arrows.add(new_arrow)
-            if unit.x > 550 and not unit.is_shot:
-                unit.vx = 0
-                unit.attack = True
+            for enemy in enemy_units.copy():
+                if unit.is_shot and (unit.x + 200) > enemy.x:
+                    unit.vx = 0
+                    unit.attack = True
+                    if 12 < unit.sprite_id < 12.2:
+                        new_arrow = Arrow(unit.x-5, unit.y-10)
+                        arrows.add(new_arrow)
+                if unit.x + 50 > enemy.x and not unit.is_shot:
+                    unit.vx = 0
+                    unit.attack = True
+                unit_collide_check(enemy_units, enemy)
+                if enemy.x < unit.x + 50:
+                    enemy.vx = 0
+                    enemy.attack = True
 
-        for enemy in enemy_units.copy():
-            unit_collide_check(enemy_units, enemy)
-            if enemy.x < 600:
-                enemy.vx = 0
-                enemy.attack = True
-
-        for arrow in arrows.copy():
-            if arrow.x > 550:
-                arrows.remove(arrow)
-
+            for arrow in arrows.copy():
+                if arrow.x > unit.x + 300:
+                    arrows.remove(arrow)
+                                    
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
         arrows.update(bgx)
