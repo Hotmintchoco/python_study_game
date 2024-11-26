@@ -87,6 +87,11 @@ class Unit(MoveObject):
         else:
             self.sprites = self.run_sprites
         super().update(bgx)
+        self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp, 5)
+    
+    def unit_hp_draw(self, pos):
+        if self.rect.collidepoint(pos):
+            pygame.draw.rect(screen, (255, 0, 0), self.hp_bar)
 
 class Skeleton_Warrior(Unit):
     run_sprites = []
@@ -339,7 +344,7 @@ while True:
             if unit.x > 550 and not unit.is_shot:
                 unit.vx = 0
                 unit.attack = True
-        
+
         for enemy in enemy_units.copy():
             unit_collide_check(enemy_units, enemy)
             if enemy.x < 600:
@@ -365,8 +370,13 @@ while True:
         tree.draw(screen, bgx)
         # 적의 나무
         enemy_tree.draw(screen, bgx)
+
         unit_sprites.draw(screen)
+        for unit in unit_sprites.copy(): 
+            unit.unit_hp_draw(point) # 유닛 체력바
         enemy_units.draw(screen)
+        for enemy in enemy_units.copy():
+            enemy.unit_hp_draw(point)
         arrows.draw(screen)
 
         pygame.display.flip()
@@ -374,4 +384,3 @@ while True:
     if quit:
         break
 pygame.quit()
-
