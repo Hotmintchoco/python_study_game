@@ -349,9 +349,11 @@ while True:
                 if unit.hp <= 0:
                     unit_sprites.remove(unit)
                     enemy.attack = False
+                    enemy.vx = -1.5
                 if enemy.hp <= 0:
                     enemy_units.remove(enemy)
                     unit.attack = False
+                    unit.vx = 1.5
                 
                 if unit.is_shot and (unit.x + 200) > enemy.x:
                     unit.vx = 0
