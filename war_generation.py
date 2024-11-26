@@ -43,7 +43,7 @@ class Unit(MoveObject):
         self.is_shot = is_shot
         self.flipped = flipped
         self.hp = 50
-        self.damage = 50
+        self.damage = 0
         self.created_time = pygame.time.get_ticks()  # 생성 시각 추가
         self.run_sprites = self.init_sprites()
         self.attack_sprites = self.get_sprites()
@@ -89,6 +89,14 @@ class Unit(MoveObject):
         super().update(bgx)
         self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp, 5)
     
+    def fighting(self, enemy):
+        if self.rect.colliderect(enemy.rect) and not self.is_shot:
+            self.vx = 0
+            self.attack = True
+            if 3 < self.sprite_id < 3.1:
+                enemy.hp -= self.damage
+    
+
     def unit_hp_draw(self, pos):
         if self.rect.collidepoint(pos):
             pygame.draw.rect(screen, (255, 0, 0), self.hp_bar)
@@ -104,6 +112,7 @@ class Skeleton_Warrior(Unit):
         if Skeleton_Warrior.attack_sprites:
             self.attack_sprites = Skeleton_Warrior.attack_sprites
         super().__init__(x, y, img_file)
+        self.damage = 10
 
 class Skeleton_Archer(Unit):
     run_sprites = []
@@ -129,6 +138,7 @@ class Skeleton_Spear(Unit):
         if Skeleton_Spear.attack_sprites:
             self.attack_sprites = Skeleton_Spear.attack_sprites
         super().__init__(x, y, img_file)
+        self.damage = 50
 
 class Enemy_Skeleton_Warrior(Unit):
     run_sprites = []
@@ -141,6 +151,7 @@ class Enemy_Skeleton_Warrior(Unit):
         if Enemy_Skeleton_Warrior.attack_sprites:
             self.attack_sprites = Enemy_Skeleton_Warrior.attack_sprites
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
+        self.damage = 10
 
 class Arrow(MoveObject):
     source_sprites = []
@@ -271,9 +282,9 @@ def handle_timer_events():
     for enemy in enemy_units:
         if enemy.vx == 0:
             enemy.vx = -1.5  # 다시 이동
-
-# 유닛들이 겹치지 않게 하는 코드            
+           
 def unit_collide_check(unit_sprites, unit):
+    """유닛들이 겹치지 않게 체크""" 
     collided_sprites = pygame.sprite.spritecollide(unit, unit_sprites, False)
     for collided_unit in collided_sprites:
         if collided_unit.created_time > unit.created_time:
@@ -293,6 +304,13 @@ tree = Tree(-50, 450)
 enemy_tree = Tree(screen.get_width() + 50, 450, flipped=True)
 clock = pygame.time.Clock()
 quit = False
+
+def unit_fighting(unit, enemy):
+    if unit.x + 50 > enemy.x and not unit.is_shot:
+        unit.vx = 0
+        unit.attack = True
+        if 3 < unit.sprite_id < 3.1:
+            enemy.hp -= unit.damage
 
 while True:
     running = True
@@ -346,14 +364,10 @@ while True:
                     if arrow.x > enemy.x - 10:
                         arrows.remove(arrow)
                         enemy.hp -= arrow.damage
+                unit.fighting(enemy)
 
-                if unit.x + 50 > enemy.x and not unit.is_shot:
-                    unit.vx = 0
-                    unit.attack = True
                 unit_collide_check(enemy_units, enemy)
-                if enemy.x < unit.x + 50:
-                    enemy.vx = 0
-                    enemy.attack = True
+                enemy.fighting(unit)
 
             
 
