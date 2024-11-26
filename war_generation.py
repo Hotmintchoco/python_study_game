@@ -146,6 +146,7 @@ class Arrow(MoveObject):
     source_sprites = []
     def __init__(self, x, y, **argx):
         super().__init__(x, y, vx=10.0, **argx)
+        self.damage = 25
     def init_sprites(self):
         if not Arrow.source_sprites:
             img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
@@ -341,6 +342,11 @@ while True:
                     if 12 < unit.sprite_id < 12.2:
                         new_arrow = Arrow(unit.x-5, unit.y-10)
                         arrows.add(new_arrow)
+                for arrow in arrows.copy():
+                    if arrow.x > enemy.x - 10:
+                        arrows.remove(arrow)
+                        enemy.hp -= arrow.damage
+
                 if unit.x + 50 > enemy.x and not unit.is_shot:
                     unit.vx = 0
                     unit.attack = True
@@ -349,10 +355,8 @@ while True:
                     enemy.vx = 0
                     enemy.attack = True
 
-            for arrow in arrows.copy():
-                if arrow.x > unit.x + 300:
-                    arrows.remove(arrow)
-                                    
+            
+
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
         arrows.update(bgx)
