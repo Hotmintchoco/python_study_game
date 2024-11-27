@@ -24,16 +24,12 @@ class MoveObject(pygame.sprite.Sprite):
     def update(self, bgx):
         self.x += self.vx
         self.y += self.vy
-        self.rect.center = (self.x, self.y)
         self.sprite_id += self.ds               
         self.sprite_id %= len(self.sprites)
 
         self.image = self.sprites[int(self.sprite_id)]
         self.rect = self.image.get_rect()
         self.rect.center = (self.x - bgx, self.y)
-
-    def draw_rect(self, screen):
-        pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
 
 class Unit(MoveObject):
     def __init__(self, x, y, img_file, flipped=False, is_shot=False,
@@ -97,7 +93,7 @@ class Unit(MoveObject):
             self.attack = True
             if 3 < self.sprite_id < 3.1:
                 enemy.hp -= self.damage
-        elif self.target:
+        if self.target:
             if self.target.hp <= 0 and not self.flipped:
                 self.attack = False
                 self.vx = 1.5
@@ -302,6 +298,7 @@ def handle_timer_events():
     
     for enemy in enemy_units:
         if enemy.vx == 0:
+
             enemy.vx = -1.5  # 다시 이동
            
 def unit_collide_check(unit_sprites, unit):
@@ -312,7 +309,7 @@ def unit_collide_check(unit_sprites, unit):
             collided_unit.vx = 0
             # 일정 시간이 지나면 다시 이동하도록 타이머 설정
             pygame.time.set_timer(pygame.USEREVENT + 1, 1, True)
-
+    
 pygame.init()
 mixer.init()
 # https://freesound.org/people/MusicByMisterbates/sounds/608811/
@@ -348,7 +345,8 @@ while True:
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
 
-        if random.random() > 0.99 and len(enemy_units) < 5:
+        # 적 유닛(enemy) 등장 확률 및 양 조절
+        if random.random() > 0.992 and len(enemy_units) < 5:
             enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             enemy_units.add(enemy_unit)
 
@@ -367,23 +365,27 @@ while True:
             bgx -= GROUND_SPEED
 
         for enemy in enemy_units.copy():
+            if not unit_sprites:
+                enemy.attack = False
             unit_collide_check(enemy_units, enemy)
             
         for unit in unit_sprites.copy():
+            if not enemy_units:
+                unit.attack = False
             unit_collide_check(unit_sprites, unit)
             for enemy in enemy_units.copy():
                 unit.shot_complition = False
 
         for unit in unit_sprites.copy():
             for enemy in enemy_units.copy():
+                unit.fighting(enemy)
+                unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
+                enemy.fighting(unit)
+
                 if unit.hp <= 0:
                     unit_sprites.remove(unit)
                 if enemy.hp <= 0:
                     enemy_units.remove(enemy)
-
-                unit.fighting(enemy)
-                unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
-                enemy.fighting(unit)
 
                 for arrow in arrows.copy():
                     if arrow.x > enemy.x - 10:
