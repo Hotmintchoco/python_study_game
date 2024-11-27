@@ -135,6 +135,7 @@ class Skeleton_Archer(Unit):
         if Skeleton_Archer.attack_sprites:
             self.attack_sprites = Skeleton_Archer.attack_sprites
         super().__init__(x, y, img_file, is_shot=True)
+        self.shot_complition = False
         self.ds = 0.19
 
 class Skeleton_Spear(Unit):
@@ -349,12 +350,15 @@ while True:
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
         menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
-        shot_complition = False
 
         if point[0] > 1019 and bgx < 249:
             bgx += GROUND_SPEED
         elif point[0] < 5 and bgx > 0:
             bgx -= GROUND_SPEED
+
+        for unit in unit_sprites.copy():
+            for enemy in enemy_units.copy():
+                unit.shot_complition = False
 
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
@@ -369,7 +373,7 @@ while True:
                     unit.vx = 1.5
 
                 unit.fighting(enemy)
-                shot_complition = unit.shot_arrow(enemy, shot_complition)
+                unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
                 unit_collide_check(enemy_units, enemy)
                 enemy.fighting(unit)
 
