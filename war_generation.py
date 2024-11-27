@@ -40,6 +40,7 @@ class Unit(MoveObject):
                   unit_vx=1.5, unit_ds=0.1):
         self.img_file = img_file
         self.attack = False
+        self.target = None
         self.is_shot = is_shot
         self.flipped = flipped
         self.hp = 50
@@ -91,13 +92,22 @@ class Unit(MoveObject):
     
     def fighting(self, enemy):
         if self.rect.colliderect(enemy.rect) and not self.is_shot and enemy.hp > 0:
+            self.target = enemy
             self.vx = 0
             self.attack = True
             if 3 < self.sprite_id < 3.1:
                 enemy.hp -= self.damage
-        
+        elif self.target:
+            if self.target.hp <= 0 and not self.flipped:
+                self.attack = False
+                self.vx = 1.5
+            elif self.target.hp <= 0 and self.flipped:
+                self.attack = False
+                self.vx = -1.5
+                
     def shot_arrow(self, enemy, shot_complition):
         if self.is_shot and unit.x + 200 > enemy.x and enemy.hp > 0:
+            self.target = enemy
             self.vx = 0
             self.attack = True
             if 12.01 < self.sprite_id < 12.2 and not shot_complition:
@@ -338,7 +348,7 @@ while True:
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
 
-        if random.random() > 0.992 and len(enemy_units) < 6:
+        if random.random() > 0.99 and len(enemy_units) < 5:
             enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             enemy_units.add(enemy_unit)
 
@@ -356,25 +366,23 @@ while True:
         elif point[0] < 5 and bgx > 0:
             bgx -= GROUND_SPEED
 
+        for enemy in enemy_units.copy():
+            unit_collide_check(enemy_units, enemy)
+            
         for unit in unit_sprites.copy():
+            unit_collide_check(unit_sprites, unit)
             for enemy in enemy_units.copy():
                 unit.shot_complition = False
 
         for unit in unit_sprites.copy():
-            unit_collide_check(unit_sprites, unit)
             for enemy in enemy_units.copy():
                 if unit.hp <= 0:
                     unit_sprites.remove(unit)
-                    enemy.attack = False
-                    enemy.vx = -1.5
                 if enemy.hp <= 0:
                     enemy_units.remove(enemy)
-                    unit.attack = False
-                    unit.vx = 1.5
 
                 unit.fighting(enemy)
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
-                unit_collide_check(enemy_units, enemy)
                 enemy.fighting(unit)
 
                 for arrow in arrows.copy():
