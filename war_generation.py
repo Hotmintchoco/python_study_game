@@ -96,10 +96,8 @@ class Unit(MoveObject):
         if self.target:
             if self.target.hp <= 0 and not self.flipped:
                 self.attack = False
-                self.vx = 1.5
             elif self.target.hp <= 0 and self.flipped:
                 self.attack = False
-                self.vx = -1.5
                 
     def shot_arrow(self, enemy, shot_complition):
         if self.is_shot and unit.x + 200 > enemy.x and enemy.hp > 0:
@@ -298,17 +296,21 @@ def handle_timer_events():
     
     for enemy in enemy_units:
         if enemy.vx == 0:
-
             enemy.vx = -1.5  # 다시 이동
            
 def unit_collide_check(unit_sprites, unit):
-    """유닛들이 겹치지 않게 체크""" 
+    """유닛들이 겹치지 않게 체크"""
     collided_sprites = pygame.sprite.spritecollide(unit, unit_sprites, False)
+    if not collided_sprites:
+        handle_timer_events()
     for collided_unit in collided_sprites:
         if collided_unit.created_time > unit.created_time:
             collided_unit.vx = 0
             # 일정 시간이 지나면 다시 이동하도록 타이머 설정
-            pygame.time.set_timer(pygame.USEREVENT + 1, 1, True)
+            pygame.time.set_timer(pygame.USEREVENT + 1, 10, True)
+
+            if not collided_unit.attack:
+                 collided_unit.sprite_id = 0
     
 pygame.init()
 mixer.init()
@@ -370,11 +372,10 @@ while True:
             unit_collide_check(enemy_units, enemy)
             
         for unit in unit_sprites.copy():
+            unit_collide_check(unit_sprites, unit)
+            unit.shot_complition = False
             if not enemy_units:
                 unit.attack = False
-            unit_collide_check(unit_sprites, unit)
-            for enemy in enemy_units.copy():
-                unit.shot_complition = False
 
         for unit in unit_sprites.copy():
             for enemy in enemy_units.copy():
