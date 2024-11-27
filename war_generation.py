@@ -89,21 +89,22 @@ class Unit(MoveObject):
         super().update(bgx)
         self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp, 5)
     
-    def fighting(self, enemy, shot_complition):
+    def fighting(self, enemy):
         if self.rect.colliderect(enemy.rect) and not self.is_shot and enemy.hp > 0:
             self.vx = 0
             self.attack = True
             if 3 < self.sprite_id < 3.1:
                 enemy.hp -= self.damage
-            return True
-        elif self.is_shot and unit.x + 200 > enemy.x:
+        
+    def shot_arrow(self, enemy, shot_complition):
+        if self.is_shot and unit.x + 200 > enemy.x and enemy.hp > 0:
             self.vx = 0
             self.attack = True
-            if 12.01 < self.sprite_id < 12.2 and shot_complition == 0:
+            if 12.01 < self.sprite_id < 12.2 and not shot_complition:
                 new_arrow = Arrow(unit.x-5, unit.y-10)
                 arrows.add(new_arrow)
                 print(unit.sprite_id)
-            return True
+        return True
         
 
     def unit_hp_draw(self, pos):
@@ -367,9 +368,10 @@ while True:
                     unit.attack = False
                     unit.vx = 1.5
 
-                shot_complition = unit.fighting(enemy, shot_complition)
+                unit.fighting(enemy)
+                shot_complition = unit.shot_arrow(enemy, shot_complition)
                 unit_collide_check(enemy_units, enemy)
-                shot_complition = enemy.fighting(unit, shot_complition)
+                enemy.fighting(unit)
 
                 for arrow in arrows.copy():
                     if arrow.x > enemy.x - 10:
