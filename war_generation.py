@@ -301,16 +301,13 @@ def handle_timer_events():
 def unit_collide_check(unit_sprites, unit):
     """유닛들이 겹치지 않게 체크"""
     collided_sprites = pygame.sprite.spritecollide(unit, unit_sprites, False)
-    if not collided_sprites:
-        handle_timer_events()
     for collided_unit in collided_sprites:
         if collided_unit.created_time > unit.created_time:
             collided_unit.vx = 0
-            # 일정 시간이 지나면 다시 이동하도록 타이머 설정
-            pygame.time.set_timer(pygame.USEREVENT + 1, 10, True)
-
             if not collided_unit.attack:
                  collided_unit.sprite_id = 0
+        # 일정 시간이 지나면 다시 이동하도록 타이머 설정
+        pygame.time.set_timer(pygame.USEREVENT + 1, 10, True)
     
 pygame.init()
 mixer.init()
