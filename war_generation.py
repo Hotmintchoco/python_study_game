@@ -37,6 +37,7 @@ class Unit(MoveObject):
         self.img_file = img_file
         self.attack = False
         self.target = None
+        self.is_dead = False
         self.is_shot = is_shot
         self.flipped = flipped
         self.hp = 50
@@ -115,6 +116,29 @@ class Unit(MoveObject):
         if self.rect.collidepoint(pos):
             pygame.draw.rect(screen, (255, 0, 0), self.hp_bar)
 
+class Dead_Skeleton(MoveObject):
+    warrior_sprites = []
+    def __init__(self, unit):
+        self.x = unit.x
+        self.y = unit.y
+        self.flipped = unit.flipped
+        self.sprite_end = False
+        super().__init__(self.x, self.y, ds=0.2)
+    
+    def init_sprites(self):
+        if not Dead_Skeleton.warrior_sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"Unit/Skeleton_Warrior/Skeleton_Dead({index}).png"
+                    ).convert_alpha()
+                    Dead_Skeleton.warrior_sprites.append(img)
+                except:
+                    break                
+        return Dead_Skeleton.warrior_sprites
+         
 class Skeleton_Warrior(Unit):
     run_sprites = []
     attack_sprites = []
@@ -329,6 +353,7 @@ while True:
     menu_bar = Menu()
     gold = Gold()
     unit_sprites = pygame.sprite.Group()
+    dead_unit_sprites = pygame.sprite.Group()
     enemy_units = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
     menu_click = None
@@ -373,6 +398,13 @@ while True:
             unit.shot_complition = False
             if not enemy_units:
                 unit.attack = False
+            if unit.is_dead:
+                unit_sprites.remove(unit)
+        
+        # unit -> dead_sprites 완료 후 삭제처리
+        for dead_unit in dead_unit_sprites.copy():
+            if dead_unit.sprite_id >= len(Dead_Skeleton.warrior_sprites) - 1:
+                dead_unit_sprites.remove(dead_unit)
 
         for unit in unit_sprites.copy():
             for enemy in enemy_units.copy():
@@ -380,8 +412,9 @@ while True:
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
                 enemy.fighting(unit)
 
-                if unit.hp <= 0:
-                    unit_sprites.remove(unit)
+                if unit.hp <= 0 and not unit.is_dead:
+                    unit.is_dead = True
+                    dead_unit_sprites.add(Dead_Skeleton(unit))
                 if enemy.hp <= 0:
                     enemy_units.remove(enemy)
 
@@ -394,6 +427,7 @@ while True:
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
         arrows.update(bgx)
+        dead_unit_sprites.update(bgx)
 
         """화면에 그리기"""
         screen.fill((255, 255, 255))
@@ -407,6 +441,7 @@ while True:
         # 적의 나무
         enemy_tree.draw(screen, bgx)
 
+        dead_unit_sprites.draw(screen)
         unit_sprites.draw(screen)
         for unit in unit_sprites.copy(): 
             unit.unit_hp_draw(point) # 유닛 체력바
