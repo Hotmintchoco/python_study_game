@@ -426,9 +426,9 @@ while True:
                 
 
         # 적 유닛(enemy) 등장 확률 및 양 조절
-        if random.random() > 0.993 and len(enemy_units) < 5:
-            #enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
-            #enemy_units.add(enemy_unit)
+        if random.random() > 0.995 and len(enemy_units) < 5:
+            enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+            enemy_units.add(enemy_unit)
             pass
 
         if isinstance(menu_click, Unit):
@@ -452,6 +452,12 @@ while True:
                 enemy.attack = False
             if enemy.is_dead:
                 enemy_units.remove(enemy)
+            
+            for arrow in arrows.copy():
+                if arrow.x > enemy.x - 10:
+                    enemy.hp -= arrow.damage
+                    arrows.remove(arrow)
+                    print(enemy.hp)
             
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
@@ -487,12 +493,6 @@ while True:
                     enemy.is_dead = True
                     dead_unit_sprites.add(Dead_Skeleton(enemy))
 
-                for arrow in arrows.copy():
-                    if arrow.x > enemy.x - 10:
-                        enemy.hp -= arrow.damage
-                        arrows.remove(arrow)
-                        print(enemy.hp)
-
         menu_bar.update()
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
@@ -521,7 +521,7 @@ while True:
         arrows.draw(screen)
 
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(50)
     if quit:
         break
 pygame.quit()
