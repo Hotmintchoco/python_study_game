@@ -41,7 +41,7 @@ class Unit(MoveObject):
         self.target_tree = False
         self.is_shot = is_shot
         self.flipped = flipped
-        self.hp = 100
+        self.hp = 50
         self.hp_divide = 1
         if self.hp > 50:
             self.hp_divide = self.hp / 50
@@ -109,7 +109,7 @@ class Unit(MoveObject):
                 self.attack = False
                 self.target = None
     
-    def unit_attack_tree(self, tree):
+    def attack_tree(self, tree):
         if self.rect.colliderect(tree.collide_rect) and not self.is_shot:
             self.target_tree = True
             self.fight_motion(tree)
@@ -192,7 +192,7 @@ class Skeleton_Spear(Unit):
         if Skeleton_Spear.attack_sprites:
             self.attack_sprites = Skeleton_Spear.attack_sprites
         super().__init__(x, y, img_file)
-        self.damage = 20
+        self.damage = 25
 
 class Enemy_Skeleton_Warrior(Unit):
     run_sprites = []
@@ -230,11 +230,18 @@ class Menu:
         self.third_img_rect = self.third_img.get_rect(topleft=(875, 60))
         self.forth_img_rect = self.forth_img.get_rect(topleft=(950, 60))
 
+        self.unit_price = 25
+        self.menu_font = pygame.font.SysFont("system", 45)
+        self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
+
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
         s = pygame.transform.scale(s, (48, 48))
         return s
     
+    def update(self):
+        self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
+
     # 메인 메뉴의 이미지들
     def main_menu(self):
         self.first_img = self.load("menu/unit.png")
@@ -256,22 +263,34 @@ class Menu:
         screen.blit(self.third_img, self.third_img_rect.topleft)
         screen.blit(self.forth_img, self.forth_img_rect.topleft)
 
+    def point_for_menu(self, pos):
+        if self.unit_menu:
+            if self.first_img_rect.collidepoint(pos):
+                self.unit_price = 25
+                screen.blit(self.menu_text, (350, 75))
+            elif self.second_img_rect.collidepoint(pos):
+                self.unit_price = 50
+                screen.blit(self.menu_text, (350, 75))
+            elif self.third_img_rect.collidepoint(pos):
+                self.unit_price = 150
+                screen.blit(self.menu_text, (350, 75))
+
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= 100:
-                Gold.now -= 100
+            if self.unit_menu and Gold.now >= self.unit_price:
+                Gold.now -= self.unit_price
                 return Skeleton_Warrior(240, 680)
             self.unit_menu = True
             self.unit_click()
             return None
         elif self.second_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= 100:
-                Gold.now -= 100
+            if self.unit_menu and Gold.now >= self.unit_price:
+                Gold.now -= self.unit_price
                 return Skeleton_Archer(240, 675)
             return None
         elif self.third_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= 100:
-                Gold.now -= 100
+            if self.unit_menu and Gold.now >= self.unit_price:
+                Gold.now -= self.unit_price
                 return Skeleton_Spear(240, 680)
             return None
         elif self.forth_img_rect.collidepoint(pos):
@@ -398,7 +417,7 @@ while True:
                 
 
         # 적 유닛(enemy) 등장 확률 및 양 조절
-        if random.random() > 0.992 and len(enemy_units) < 5:
+        if random.random() > 0.993 and len(enemy_units) < 5:
             enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             enemy_units.add(enemy_unit)
 
@@ -418,7 +437,8 @@ while True:
 
         for enemy in enemy_units.copy():
             unit_collide_check(enemy_units, enemy)
-            if not unit_sprites:
+            enemy.attack_tree(tree)
+            if not unit_sprites and not enemy.target_tree:
                 enemy.attack = False
             if enemy.is_dead:
                 enemy_units.remove(enemy)
@@ -426,7 +446,7 @@ while True:
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
             unit.shot_complition = False
-            unit.unit_attack_tree(enemy_tree)
+            unit.attack_tree(enemy_tree)
             if not enemy_units and not unit.target_tree:
                 unit.attack = False
             if unit.is_dead:
@@ -456,6 +476,7 @@ while True:
                         arrows.remove(arrow)
                         print(enemy.hp)
 
+        menu_bar.update()
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
         arrows.update(bgx)
@@ -471,6 +492,7 @@ while True:
         screen.blit(menu_text, (725, 20))
         # 나무
         trees.draw(screen)
+        menu_bar.point_for_menu(point)
 
         dead_unit_sprites.draw(screen)
         unit_sprites.draw(screen)
@@ -482,7 +504,7 @@ while True:
         arrows.draw(screen)
 
         pygame.display.flip()
-        clock.tick(50)
+        clock.tick(30)
     if quit:
         break
 pygame.quit()
