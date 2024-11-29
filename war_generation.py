@@ -110,19 +110,28 @@ class Unit(MoveObject):
                 self.target = None
     
     def attack_tree(self, tree):
-        if self.rect.colliderect(tree.collide_rect) and not self.is_shot:
+        if self.rect.colliderect(tree.collide_rect) and not self.is_shot and not self.target:
             self.target_tree = True
             self.fight_motion(tree)
-                
+
+    def shot_motion(self, shot_complition):
+        self.vx = 0
+        self.attack = True
+        if 12.01 < self.sprite_id < 12.2 and not shot_complition:
+            new_arrow = Arrow(unit.x-5, unit.y-10)
+            arrows.add(new_arrow)
+            print(unit.sprite_id)
+
+    def shot_tree(self, tree, shot_complition):
+        if self.is_shot and self.x + 250 > tree.x and not self.target:
+            self.target_tree = True
+            self.shot_motion(shot_complition)
+
     def shot_arrow(self, enemy, shot_complition):
-        if self.is_shot and unit.x + 200 > enemy.x and enemy.hp > 0:
+        if self.is_shot and self.x + 200 > enemy.x and enemy.hp > 0:
             self.target = enemy
-            self.vx = 0
-            self.attack = True
-            if 12.01 < self.sprite_id < 12.2 and not shot_complition:
-                new_arrow = Arrow(unit.x-5, unit.y-10)
-                arrows.add(new_arrow)
-                print(unit.sprite_id)
+            self.shot_motion(shot_complition)
+            
         return True
         
 
@@ -337,7 +346,7 @@ class Tree(MoveObject):
         super().__init__(x, y)
         self.collide_rect = pygame.Rect(
             self.x, self.y, 
-            self.rect.width - 150, 
+            self.rect.width - 175, 
             self.rect.height
         )
         self.hp = 5000
@@ -418,8 +427,9 @@ while True:
 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         if random.random() > 0.993 and len(enemy_units) < 5:
-            enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
-            enemy_units.add(enemy_unit)
+            #enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+            #enemy_units.add(enemy_unit)
+            pass
 
         if isinstance(menu_click, Unit):
             unit_sprites.add(menu_click)
@@ -451,13 +461,20 @@ while True:
                 unit.attack = False
             if unit.is_dead:
                 unit_sprites.remove(unit)
-        
+
+        for arrow in arrows.copy():
+            if arrow.rect.colliderect(enemy_tree.collide_rect):
+                enemy_tree.hp -= arrow.damage
+                arrows.remove(arrow)
+                print(enemy_tree.hp)    
+    
         # unit -> dead_sprites 완료 후 삭제처리
         for dead_unit in dead_unit_sprites.copy():
             if dead_unit.sprite_id >= len(dead_unit.sprites) - 1:
                 dead_unit_sprites.remove(dead_unit)
 
         for unit in unit_sprites.copy():
+            unit.shot_tree(enemy_tree, unit.shot_complition)
             for enemy in enemy_units.copy():
                 unit.fighting(enemy)
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
