@@ -38,10 +38,13 @@ class Unit(MoveObject):
         self.attack = False
         self.target = None
         self.is_dead = False
+        self.target_tree = False
         self.is_shot = is_shot
         self.flipped = flipped
-        self.hp = 50
-        self.damage = 0
+        self.hp = 100
+        self.hp_divide = 1
+        if self.hp > 50:
+            self.hp_divide = self.hp / 50
         self.created_time = pygame.time.get_ticks()  # 생성 시각 추가
         self.run_sprites = self.init_sprites()
         self.attack_sprites = self.get_sprites()
@@ -85,20 +88,31 @@ class Unit(MoveObject):
         else:
             self.sprites = self.run_sprites
         super().update(bgx)
-        self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp, 5)
+        self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp // self.hp_divide, 5)
     
+    def fight_motion(self, target):
+        self.vx = 0
+        self.attack = True
+        if 3 < self.sprite_id < 3.1:
+            target.hp -= self.damage
+            print(target.hp)
+
     def fighting(self, enemy):
         if self.rect.colliderect(enemy.rect) and not self.is_shot and enemy.hp > 0:
             self.target = enemy
-            self.vx = 0
-            self.attack = True
-            if 3 < self.sprite_id < 3.1:
-                enemy.hp -= self.damage
+            self.fight_motion(enemy)
         if self.target:
             if self.target.hp <= 0 and not self.flipped:
                 self.attack = False
+                self.target = None
             elif self.target.hp <= 0 and self.flipped:
                 self.attack = False
+                self.target = None
+    
+    def unit_attack_tree(self, tree):
+        if self.rect.colliderect(tree.collide_rect) and not self.is_shot:
+            self.target_tree = True
+            self.fight_motion(tree)
                 
     def shot_arrow(self, enemy, shot_complition):
         if self.is_shot and unit.x + 200 > enemy.x and enemy.hp > 0:
@@ -298,20 +312,29 @@ class Ground:
         for i in range(-1, 17):
             screen.blit(self.tile, (i * 64 - bgx % 64, 64 * 11))
 
-class Tree:
+class Tree(MoveObject):
     def __init__(self, x, y, flipped=False):
-        self.img = self.load("background_tile/png/Objects/Tree.png")
-        self.x = x
-        self.y = y
-        if flipped:
-            self.img = pygame.transform.flip(self.img, True, False)
+        self.flipped = flipped
+        super().__init__(x, y)
+        self.collide_rect = pygame.Rect(
+            self.x, self.y, 
+            self.rect.width - 150, 
+            self.rect.height
+        )
+        self.hp = 5000
+    
+    def init_sprites(self):
+        self.sprites = []
+        img = pygame.image.load("background_tile/png/Objects/Tree.png").convert_alpha()
+        if self.flipped:
+            img = pygame.transform.flip(img, True, False)
+        self.sprites = [img]
 
-    def load(self, filename):
-        s = pygame.image.load(filename).convert_alpha()
-        return s
-
-    def draw(self, screen, bgx):
-        screen.blit(self.img, (self.x - bgx, self.y))
+        return self.sprites
+    
+    def update(self, bgx):
+        super().update(bgx)
+        self.collide_rect.center = self.rect.center
 
 # 이벤트 발생이후 실행사항 
 def handle_timer_events():
@@ -342,9 +365,9 @@ mixer.music.set_volume(0.2)
 screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
 menu_font = pygame.font.SysFont("system", 40) # menu 폰트
 background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
-tree = Tree(-50, 450)
-enemy_tree = Tree(screen.get_width() + 50, 450, flipped=True)
 clock = pygame.time.Clock()
+tree = Tree(50, 575)
+enemy_tree = Tree(screen.get_width() + 225, 575, flipped=True)
 quit = False
 
 while True:
@@ -353,10 +376,13 @@ while True:
     ground = Ground()
     menu_bar = Menu()
     gold = Gold()
+    trees = pygame.sprite.Group()
     unit_sprites = pygame.sprite.Group()
     dead_unit_sprites = pygame.sprite.Group()
     enemy_units = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
+    trees.add(tree)
+    trees.add(enemy_tree)
     menu_click = None
     mixer.music.play(-1)
     while running:
@@ -369,6 +395,7 @@ while True:
                 menu_click = menu_bar.handle_click(event.pos)
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
+                
 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         if random.random() > 0.992 and len(enemy_units) < 5:
@@ -384,9 +411,9 @@ while True:
         lmousedown = pygame.mouse.get_pressed()[0]
         menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
 
-        if point[0] > 1019 and bgx < 249:
+        if point[0] > 1000 and bgx < 249:
             bgx += GROUND_SPEED
-        elif point[0] < 5 and bgx > 0:
+        elif point[0] < 25 and bgx > 0:
             bgx -= GROUND_SPEED
 
         for enemy in enemy_units.copy():
@@ -399,7 +426,8 @@ while True:
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
             unit.shot_complition = False
-            if not enemy_units:
+            unit.unit_attack_tree(enemy_tree)
+            if not enemy_units and not unit.target_tree:
                 unit.attack = False
             if unit.is_dead:
                 unit_sprites.remove(unit)
@@ -432,6 +460,7 @@ while True:
         enemy_units.update(bgx)
         arrows.update(bgx)
         dead_unit_sprites.update(bgx)
+        trees.update(bgx)
 
         """화면에 그리기"""
         screen.fill((255, 255, 255))
@@ -440,10 +469,8 @@ while True:
         gold.draw(menu_font)
         menu_bar.draw(screen)
         screen.blit(menu_text, (725, 20))
-        # 나의 나무
-        tree.draw(screen, bgx)
-        # 적의 나무
-        enemy_tree.draw(screen, bgx)
+        # 나무
+        trees.draw(screen)
 
         dead_unit_sprites.draw(screen)
         unit_sprites.draw(screen)
@@ -455,7 +482,7 @@ while True:
         arrows.draw(screen)
 
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(50)
     if quit:
         break
 pygame.quit()
