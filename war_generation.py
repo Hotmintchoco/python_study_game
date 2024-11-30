@@ -233,13 +233,19 @@ class Menu:
         self.menu = pygame.Rect(700, 0, 500, 150)
         self.main_menu()
         self.unit_menu = False
-
+        
         self.first_img_rect = self.first_img.get_rect(topleft=(725, 60))  # Unit image position
         self.second_img_rect = self.second_img.get_rect(topleft=(800, 60))
         self.third_img_rect = self.third_img.get_rect(topleft=(875, 60))
         self.forth_img_rect = self.forth_img.get_rect(topleft=(950, 60))
 
-        self.unit_price = 25
+        self.unit_price = 0
+        self.dict_unit_price = {
+            25 : Skeleton_Warrior(180, 680),
+            50 : Skeleton_Archer(180, 675),
+            150 : Skeleton_Spear(180, 680)
+        }
+        self.list_unit_price = list(self.dict_unit_price.keys())
         self.menu_font = pygame.font.SysFont("system", 45)
         self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
 
@@ -265,6 +271,10 @@ class Menu:
         self.third_img = self.load("menu/Skeleton_Spear.png")
         self.forth_img = self.load("menu/Return.png")
 
+    def buy_unit(self, unit_price):
+        Gold.now -= unit_price
+        return self.dict_unit_price.get(unit_price, Skeleton_Warrior(180, 680))
+
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 220, 115), self.menu)
         screen.blit(self.first_img, self.first_img_rect.topleft)
@@ -275,32 +285,29 @@ class Menu:
     def point_for_menu(self, pos):
         if self.unit_menu:
             if self.first_img_rect.collidepoint(pos):
-                self.unit_price = 25
+                self.unit_price = self.list_unit_price[0]
                 screen.blit(self.menu_text, (350, 75))
             elif self.second_img_rect.collidepoint(pos):
-                self.unit_price = 50
+                self.unit_price = self.list_unit_price[1]
                 screen.blit(self.menu_text, (350, 75))
             elif self.third_img_rect.collidepoint(pos):
-                self.unit_price = 150
+                self.unit_price = self.list_unit_price[2]
                 screen.blit(self.menu_text, (350, 75))
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= self.unit_price:
-                Gold.now -= self.unit_price
-                return Skeleton_Warrior(240, 680)
+                return self.buy_unit(self.unit_price)
             self.unit_menu = True
             self.unit_click()
             return None
         elif self.second_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= self.unit_price:
-                Gold.now -= self.unit_price
-                return Skeleton_Archer(240, 675)
+                return self.buy_unit(self.unit_price)
             return None
         elif self.third_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= self.unit_price:
-                Gold.now -= self.unit_price
-                return Skeleton_Spear(240, 680)
+                return self.buy_unit(self.unit_price)
             return None
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
@@ -427,8 +434,8 @@ while True:
 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         if random.random() > 0.995 and len(enemy_units) < 5:
-            enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
-            enemy_units.add(enemy_unit)
+            #enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+            #enemy_units.add(enemy_unit)
             pass
 
         if isinstance(menu_click, Unit):
@@ -521,7 +528,7 @@ while True:
         arrows.draw(screen)
 
         pygame.display.flip()
-        clock.tick(50)
+        clock.tick(30)
     if quit:
         break
 pygame.quit()
