@@ -228,26 +228,33 @@ class Arrow(MoveObject):
         return Arrow.source_sprites
     
 class Menu:
+    MAX_GAUGE = 325
     def __init__(self):
         super().__init__()
         self.menu = pygame.Rect(700, 0, 500, 150)
         self.main_menu()
+        self.menu_index = 0
         self.unit_menu = False
+        self.is_unit_create = False # 유닛이 생성 시간이 다 채워지면 True
+        self.is_unit_create_time = False # 유닛 생성 시간 이미지
         
         self.first_img_rect = self.first_img.get_rect(topleft=(725, 60))  # Unit image position
         self.second_img_rect = self.second_img.get_rect(topleft=(800, 60))
         self.third_img_rect = self.third_img.get_rect(topleft=(875, 60))
         self.forth_img_rect = self.forth_img.get_rect(topleft=(950, 60))
+        self.unit_create_time_rect = pygame.Rect(350, 15, 10, 35)
 
         self.unit_price = 0
+        self.buy_unit_price = 0
         self.dict_unit_price = {
-            25 : Skeleton_Warrior(180, 680),
-            50 : Skeleton_Archer(180, 675),
-            150 : Skeleton_Spear(180, 680)
+            25 : Skeleton_Warrior,
+            50 : Skeleton_Archer,
+            150 : Skeleton_Spear
         }
         self.list_unit_price = list(self.dict_unit_price.keys())
         self.menu_font = pygame.font.SysFont("system", 45)
-        self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
+        self.unit_create_gauge = 0
+        self.list_unit_create_gauge = [5, 3, 2]
 
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
@@ -256,7 +263,14 @@ class Menu:
     
     def update(self):
         self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
-
+        if self.is_unit_create_time and self.unit_create_gauge <= Menu.MAX_GAUGE:
+            self.unit_create_gauge += self.list_unit_create_gauge[self.menu_index]
+            self.unit_create_time_rect = pygame.Rect(350, 15, self.unit_create_gauge, 25)
+        elif self.unit_create_gauge > Menu.MAX_GAUGE:
+            self.is_unit_create = True 
+            self.is_unit_create_time = False
+            self.unit_create_gauge = 0
+        
     # 메인 메뉴의 이미지들
     def main_menu(self):
         self.first_img = self.load("menu/unit.png")
@@ -271,9 +285,12 @@ class Menu:
         self.third_img = self.load("menu/Skeleton_Spear.png")
         self.forth_img = self.load("menu/Return.png")
 
+    def create_unit(self):
+        self.is_unit_create = False
+        return self.dict_unit_price[self.buy_unit_price](180, 680)
+
     def buy_unit(self, unit_price):
         Gold.now -= unit_price
-        return self.dict_unit_price.get(unit_price, Skeleton_Warrior(180, 680))
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 220, 115), self.menu)
@@ -281,6 +298,10 @@ class Menu:
         screen.blit(self.second_img, self.second_img_rect.topleft)
         screen.blit(self.third_img, self.third_img_rect.topleft)
         screen.blit(self.forth_img, self.forth_img_rect.topleft)
+
+        if self.is_unit_create_time:
+            pygame.draw.rect(screen, (125, 125, 125), self.unit_create_time_rect)
+    
 
     def point_for_menu(self, pos):
         if self.unit_menu:
@@ -296,24 +317,32 @@ class Menu:
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= self.unit_price:
-                return self.buy_unit(self.unit_price)
+            if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
+                self.menu_index = 0
+                self.is_unit_create_time = True
+                self.buy_unit_price = self.unit_price
+                self.buy_unit(self.unit_price)
             self.unit_menu = True
             self.unit_click()
-            return None
+
         elif self.second_img_rect.collidepoint(pos):
+            if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
+                self.menu_index = 1
+                self.is_unit_create_time = True
+                self.buy_unit_price = self.unit_price
+                self.buy_unit(self.unit_price)
+
+        elif self.third_img_rect.collidepoint(pos) and not self.is_unit_create_time:
             if self.unit_menu and Gold.now >= self.unit_price:
-                return self.buy_unit(self.unit_price)
-            return None
-        elif self.third_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= self.unit_price:
-                return self.buy_unit(self.unit_price)
-            return None
+                self.menu_index = 2
+                self.is_unit_create_time = True
+                self.buy_unit_price = self.unit_price
+                self.buy_unit(self.unit_price)
+
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
                 self.main_menu()
                 self.unit_menu = False
-            return None
 
 class Gold:
     now = 10000
@@ -418,7 +447,6 @@ while True:
     arrows = pygame.sprite.Group()
     trees.add(tree)
     trees.add(enemy_tree)
-    menu_click = None
     mixer.music.play(-1)
     while running:
         for event in pygame.event.get():
@@ -427,22 +455,20 @@ while True:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 # Left mouse button click
-                menu_click = menu_bar.handle_click(event.pos)
+                menu_bar.handle_click(event.pos)
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
                 
-
         # 적 유닛(enemy) 등장 확률 및 양 조절
         if random.random() > 0.995 and len(enemy_units) < 5:
             #enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             #enemy_units.add(enemy_unit)
             pass
-
-        if isinstance(menu_click, Unit):
-            unit_sprites.add(menu_click)
+        
+        if menu_bar.is_unit_create:
+            unit_sprites.add(menu_bar.create_unit())
 
         """업데이트"""
-        
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
         menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
