@@ -245,7 +245,6 @@ class Menu:
         self.unit_create_time_rect = pygame.Rect(350, 15, 10, 35)
 
         self.unit_price = 0
-        self.buy_unit_price = 0
         self.dict_unit_price = {
             25 : Skeleton_Warrior,
             50 : Skeleton_Archer,
@@ -302,8 +301,7 @@ class Menu:
         if self.is_unit_create_time:
             pygame.draw.rect(screen, (125, 125, 125), self.unit_create_time_rect)
     
-
-    def point_for_menu(self, pos):
+    def point_for_menu_draw(self, pos):
         if self.unit_menu:
             if self.first_img_rect.collidepoint(pos):
                 self.unit_price = self.list_unit_price[0]
@@ -332,8 +330,8 @@ class Menu:
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.unit_price)
 
-        elif self.third_img_rect.collidepoint(pos) and not self.is_unit_create_time:
-            if self.unit_menu and Gold.now >= self.unit_price:
+        elif self.third_img_rect.collidepoint(pos):
+            if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
                 self.menu_index = 2
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
@@ -386,6 +384,7 @@ class Tree(MoveObject):
             self.rect.height
         )
         self.hp = 5000
+        self.hp_divide = self.hp / 450
     
     def init_sprites(self):
         self.sprites = []
@@ -399,6 +398,14 @@ class Tree(MoveObject):
     def update(self, bgx):
         super().update(bgx)
         self.collide_rect.center = self.rect.center
+        hp_height = self.hp // self.hp_divide
+        if self.flipped:
+            self.hp_bar = pygame.Rect(self.x - (bgx - 5), 200 + (450 - hp_height), 15, hp_height)
+        else:
+            self.hp_bar = pygame.Rect(self.x - (bgx + 40), 200 + (450 - hp_height), 15, hp_height)
+
+    def tree_hp_draw(self):
+        pygame.draw.rect(screen, (225, 94, 0), self.hp_bar)
 
 # 이벤트 발생이후 실행사항 
 def handle_timer_events():
@@ -542,10 +549,12 @@ while True:
         screen.blit(menu_text, (725, 20))
         # 나무
         trees.draw(screen)
-        menu_bar.point_for_menu(point)
+        menu_bar.point_for_menu_draw(point)
 
         dead_unit_sprites.draw(screen)
         unit_sprites.draw(screen)
+        tree.tree_hp_draw()
+        enemy_tree.tree_hp_draw()
         for unit in unit_sprites.copy(): 
             unit.unit_hp_draw(point) # 유닛 체력바
         enemy_units.draw(screen)
