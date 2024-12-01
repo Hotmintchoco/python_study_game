@@ -4,7 +4,7 @@ from pygame import mixer
 
 GROUND_SPEED = 7.5
 
-class MoveObject(pygame.sprite.Sprite):
+class GameObject(pygame.sprite.Sprite):
     def __init__(self, x, y, vx=0.0, vy=0.0, ds=0.0):
         super().__init__()
         self.x = x
@@ -31,7 +31,7 @@ class MoveObject(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x - bgx, self.y)
 
-class Unit(MoveObject):
+class Unit(GameObject):
     def __init__(self, x, y, img_file, flipped=False, is_shot=False,
                   unit_vx=1.5, unit_ds=0.1):
         self.img_file = img_file
@@ -123,7 +123,7 @@ class Unit(MoveObject):
             print(unit.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
-        if self.is_shot and self.x + 250 > tree.x and not self.target:
+        if self.is_shot and self.x + 225 > tree.x and not self.target:
             self.target_tree = True
             self.shot_motion(shot_complition)
 
@@ -139,7 +139,7 @@ class Unit(MoveObject):
         if self.rect.collidepoint(pos):
             pygame.draw.rect(screen, (255, 0, 0), self.hp_bar)
 
-class Dead_Skeleton(MoveObject):
+class Dead_Skeleton(GameObject):
     def __init__(self, unit):
         self.x = unit.x
         self.y = unit.y
@@ -216,7 +216,22 @@ class Enemy_Skeleton_Warrior(Unit):
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
         self.damage = 10
 
-class Arrow(MoveObject):
+class Turret(GameObject):
+    def __init__(self, x, y, flipped=False):
+        self.flipped = flipped
+        super().__init__(x, y)
+    
+    def init_sprites(self):
+        self.sprites = []
+        img = pygame.image.load("Turret/Turret1Top.png").convert_alpha()
+        img = pygame.transform.scale(img, (80, 40))
+        if self.flipped:
+            img = pygame.transform.flip(img, True, False)
+        self.sprites = [img]
+
+        return self.sprites
+
+class Arrow(GameObject):
     source_sprites = []
     def __init__(self, x, y, **argx):
         super().__init__(x, y, vx=10.0, **argx)
@@ -374,7 +389,7 @@ class Ground:
         for i in range(-1, 17):
             screen.blit(self.tile, (i * 64 - bgx % 64, 64 * 11))
 
-class Tree(MoveObject):
+class Tree(GameObject):
     def __init__(self, x, y, flipped=False):
         self.flipped = flipped
         super().__init__(x, y)
@@ -451,6 +466,7 @@ while True:
     unit_sprites = pygame.sprite.Group()
     dead_unit_sprites = pygame.sprite.Group()
     enemy_units = pygame.sprite.Group()
+    turrets = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
     trees.add(tree)
     trees.add(enemy_tree)
@@ -475,6 +491,8 @@ while True:
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
 
+        turret = Turret(125, 550, flipped=True)
+        turrets.add(turret)
         """업데이트"""
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
@@ -536,6 +554,7 @@ while True:
         menu_bar.update()
         unit_sprites.update(bgx)
         enemy_units.update(bgx)
+        turrets.update(bgx)
         arrows.update(bgx)
         dead_unit_sprites.update(bgx)
         trees.update(bgx)
@@ -553,14 +572,15 @@ while True:
 
         dead_unit_sprites.draw(screen)
         unit_sprites.draw(screen)
-        tree.tree_hp_draw()
-        enemy_tree.tree_hp_draw()
         for unit in unit_sprites.copy(): 
             unit.unit_hp_draw(point) # 유닛 체력바
         enemy_units.draw(screen)
         for enemy in enemy_units.copy():
             enemy.unit_hp_draw(point)
+        turrets.draw(screen)
         arrows.draw(screen)
+        tree.tree_hp_draw()
+        enemy_tree.tree_hp_draw()
 
         pygame.display.flip()
         clock.tick(30)
