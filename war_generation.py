@@ -118,9 +118,9 @@ class Unit(GameObject):
         self.vx = 0
         self.attack = True
         if 12.01 < self.sprite_id < 12.2 and not shot_complition:
-            new_arrow = Arrow(unit.x-5, unit.y-10)
+            new_arrow = Arrow(self.x-5, self.y-10)
             arrows.add(new_arrow)
-            print(unit.sprite_id)
+            print(self.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
         if self.is_shot and self.x + 225 > tree.x and not self.target:
@@ -219,6 +219,8 @@ class Enemy_Skeleton_Warrior(Unit):
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False):
         self.flipped = flipped
+        self.is_shot = False
+        self.shot_time = 0
         super().__init__(x, y)
     
     def init_sprites(self):
@@ -230,11 +232,34 @@ class Turret(GameObject):
         self.sprites = [img]
 
         return self.sprites
+    
+    def shot_turret(self):
+        if self.shot_time < 50:
+            self.shot_time += 1
+        else:
+            print("장전완료")
+            new_shell = Shell(self.x+30, self.y)
+            shells.add(new_shell)
+            self.shot_time = 0
 
+class Shell(GameObject):
+    source_sprites = []
+    def __init__(self, x, y, flipped=False, vx=15, vy= 6.5):
+        self.flipped = flipped
+        self.damage = 30
+        super().__init__(x, y, vx=vx, vy=vy)
+    
+    def init_sprites(self):
+        if not Shell.source_sprites:
+            img = pygame.image.load("Turret/shell.png").convert_alpha()
+            img = pygame.transform.scale(img, (20, 20))
+            Shell.source_sprites = [img]
+        return Shell.source_sprites
+    
 class Arrow(GameObject):
     source_sprites = []
-    def __init__(self, x, y, **argx):
-        super().__init__(x, y, vx=10.0, **argx)
+    def __init__(self, x, y):
+        super().__init__(x, y, vx=10.0)
         self.damage = 25
     def init_sprites(self):
         if not Arrow.source_sprites:
@@ -344,6 +369,9 @@ class Menu:
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.unit_price)
+            else:
+                self.turret = Turret(125, 550, flipped=True)
+                turrets.add(self.turret)
 
         elif self.third_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
@@ -467,6 +495,7 @@ while True:
     dead_unit_sprites = pygame.sprite.Group()
     enemy_units = pygame.sprite.Group()
     turrets = pygame.sprite.Group()
+    shells = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
     trees.add(tree)
     trees.add(enemy_tree)
@@ -490,9 +519,6 @@ while True:
         
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
-
-        turret = Turret(125, 550, flipped=True)
-        turrets.add(turret)
         """업데이트"""
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
@@ -502,6 +528,9 @@ while True:
             bgx += GROUND_SPEED
         elif point[0] < 25 and bgx > 0:
             bgx -= GROUND_SPEED
+
+        if len(turrets) > 0:
+            menu_bar.turret.shot_turret()
 
         for enemy in enemy_units.copy():
             unit_collide_check(enemy_units, enemy)
@@ -530,7 +559,11 @@ while True:
             if arrow.rect.colliderect(enemy_tree.collide_rect):
                 enemy_tree.hp -= arrow.damage
                 arrows.remove(arrow)
-                print(enemy_tree.hp)    
+                print(enemy_tree.hp)
+
+        for shell in shells.copy():
+            if shell.x > 425:
+                shells.remove(shell)  
     
         # unit -> dead_sprites 완료 후 삭제처리
         for dead_unit in dead_unit_sprites.copy():
@@ -556,6 +589,7 @@ while True:
         enemy_units.update(bgx)
         turrets.update(bgx)
         arrows.update(bgx)
+        shells.update(bgx)
         dead_unit_sprites.update(bgx)
         trees.update(bgx)
 
@@ -579,11 +613,12 @@ while True:
             enemy.unit_hp_draw(point)
         turrets.draw(screen)
         arrows.draw(screen)
+        shells.draw(screen)
         tree.tree_hp_draw()
         enemy_tree.tree_hp_draw()
 
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(40)
     if quit:
         break
 pygame.quit()
