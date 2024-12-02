@@ -131,10 +131,8 @@ class Unit(GameObject):
         if self.is_shot and self.x + 200 > enemy.x and enemy.hp > 0:
             self.target = enemy
             self.shot_motion(shot_complition)
-            
         return True
         
-
     def unit_hp_draw(self, pos):
         if self.rect.collidepoint(pos):
             pygame.draw.rect(screen, (255, 0, 0), self.hp_bar)
@@ -220,7 +218,9 @@ class Turret(GameObject):
     def __init__(self, x, y, flipped=False):
         self.flipped = flipped
         self.is_shot = False
+        self.target = None
         self.shot_time = 0
+        self.turret_speed = 20 # 낮을수록 빠름
         super().__init__(x, y)
     
     def init_sprites(self):
@@ -233,19 +233,30 @@ class Turret(GameObject):
 
         return self.sprites
     
+    def set_target(self, enemy):
+        if menu_bar.turret.x + 300 > enemy.x:
+            if not self.target:
+                self.target = enemy
+                self.shot_time = 0
+
     def shot_turret(self):
-        if self.shot_time < 50:
-            self.shot_time += 1
-        else:
-            print("장전완료")
-            new_shell = Shell(self.x+30, self.y)
-            shells.add(new_shell)
-            self.shot_time = 0
+        if self.target:
+            if self.shot_time < 50:
+                self.shot_time += 1
+            else:
+                print("장전완료")
+                target_x_distance = self.target.x - self.x
+                target_y_distance = self.target.y - self.y
+                new_shell = Shell(self.x+35, self.y, vx=target_x_distance/self.turret_speed, vy=target_y_distance/self.turret_speed)
+                shells.add(new_shell)
+                self.shot_time = 0
+
+            if self.target.hp <= 0:
+                self.target = None
 
 class Shell(GameObject):
     source_sprites = []
-    def __init__(self, x, y, flipped=False, vx=15, vy= 6.5):
-        self.flipped = flipped
+    def __init__(self, x, y, vx=10, vy= 4.22):
         self.damage = 30
         super().__init__(x, y, vx=vx, vy=vy)
     
@@ -277,6 +288,7 @@ class Menu:
         self.unit_menu = False
         self.is_unit_create = False # 유닛이 생성 시간이 다 채워지면 True
         self.is_unit_create_time = False # 유닛 생성 시간 이미지
+        self.turret = None
         
         self.first_img_rect = self.first_img.get_rect(topleft=(725, 60))  # Unit image position
         self.second_img_rect = self.second_img.get_rect(topleft=(800, 60))
@@ -513,12 +525,14 @@ while True:
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         if random.random() > 0.995 and len(enemy_units) < 5:
-            #enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
-            #enemy_units.add(enemy_unit)
-            pass
+            enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+            enemy_units.add(enemy_unit)
         
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
+
+        if menu_bar.turret:
+            menu_bar.turret.shot_turret()
         """업데이트"""
         point = pygame.mouse.get_pos()
         lmousedown = pygame.mouse.get_pressed()[0]
@@ -529,17 +543,26 @@ while True:
         elif point[0] < 25 and bgx > 0:
             bgx -= GROUND_SPEED
 
-        if len(turrets) > 0:
-            menu_bar.turret.shot_turret()
-
         for enemy in enemy_units.copy():
             unit_collide_check(enemy_units, enemy)
             enemy.attack_tree(tree)
+            if enemy.hp <= 0 and not enemy.is_dead:
+                    enemy.is_dead = True
+                    dead_unit_sprites.add(Dead_Skeleton(enemy))
+
             if not unit_sprites and not enemy.target_tree:
                 enemy.attack = False
             if enemy.is_dead:
                 enemy_units.remove(enemy)
             
+            if menu_bar.turret:
+                menu_bar.turret.set_target(enemy)
+
+            for shell in shells.copy():
+                if shell.rect.colliderect(enemy.rect):
+                    enemy.hp -= shell.damage
+                    shells.remove(shell)
+
             for arrow in arrows.copy():
                 if arrow.x > enemy.x - 10:
                     enemy.hp -= arrow.damage
@@ -550,6 +573,9 @@ while True:
             unit_collide_check(unit_sprites, unit)
             unit.shot_complition = False
             unit.attack_tree(enemy_tree)
+            if unit.hp <= 0 and not unit.is_dead:
+                    unit.is_dead = True
+                    dead_unit_sprites.add(Dead_Skeleton(unit))
             if not enemy_units and not unit.target_tree:
                 unit.attack = False
             if unit.is_dead:
@@ -561,10 +587,6 @@ while True:
                 arrows.remove(arrow)
                 print(enemy_tree.hp)
 
-        for shell in shells.copy():
-            if shell.x > 425:
-                shells.remove(shell)  
-    
         # unit -> dead_sprites 완료 후 삭제처리
         for dead_unit in dead_unit_sprites.copy():
             if dead_unit.sprite_id >= len(dead_unit.sprites) - 1:
@@ -576,13 +598,6 @@ while True:
                 unit.fighting(enemy)
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
                 enemy.fighting(unit)
-
-                if unit.hp <= 0 and not unit.is_dead:
-                    unit.is_dead = True
-                    dead_unit_sprites.add(Dead_Skeleton(unit))
-                if enemy.hp <= 0 and not enemy.is_dead:
-                    enemy.is_dead = True
-                    dead_unit_sprites.add(Dead_Skeleton(enemy))
 
         menu_bar.update()
         unit_sprites.update(bgx)
