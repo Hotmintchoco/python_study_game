@@ -244,6 +244,20 @@ class Enemy_Skeleton_Archer(Unit):
         self.ds = 0.19
         self.price = 65
 
+class Enemy_Skeleton_Spear(Unit):
+    run_sprites = []
+    attack_sprites = []
+
+    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
+        if Enemy_Skeleton_Spear.run_sprites:
+            self.run_sprites = Enemy_Skeleton_Spear.run_sprites
+
+        if Enemy_Skeleton_Spear.attack_sprites:
+            self.attack_sprites = Enemy_Skeleton_Spear.attack_sprites
+        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
+        self.damage = 25
+        self.price = 175
+
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False):
         self.flipped = flipped
@@ -274,11 +288,9 @@ class Turret(GameObject):
             if self.shot_time < 50:
                 self.shot_time += 1
             else:
-                print("장전완료")
                 target_x_distance = self.target.x - self.x
                 target_y_distance = self.target.y - self.y
                 new_shell = Shell(self.x+35, self.y, vx=target_x_distance/self.turret_speed, vy=target_y_distance/self.turret_speed)
-                print(target_x_distance/self.turret_speed)
                 shells.add(new_shell)
                 self.shot_time = 0
 
@@ -462,6 +474,7 @@ class Gold:
     
     def update(self, get_gold):
         Gold.now += get_gold
+        Gold.total_earn += get_gold
 
     def draw(self, font):
         pygame.draw.rect(screen, (134, 229, 127), self.gold_box)
@@ -552,6 +565,9 @@ quit = False
 
 while True:
     running = True
+    enemy_rand = 0
+    max_rand = 8
+    game_difficult = 0
     bgx = 0  # background x
     ground = Ground()
     menu_bar = Menu()
@@ -579,9 +595,37 @@ while True:
                 handle_timer_events()
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
-        if random.random() > 0.992 and len(enemy_units) < 5:
-            enemy_unit = Enemy_Skeleton_Archer(1150, 680)
-            enemy_units.add(enemy_unit)
+        rand = random.random()
+        if 400 > Gold.total_earn > 200:
+            game_difficult = 3
+        elif Gold.total_earn > 400:
+            game_difficult = 5
+        if rand > 0.992 and len(enemy_units) < 5:
+            enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
+
+            if game_difficult < 4:
+                if enemy_rand >= game_difficult:
+                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                    enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+                    enemy_units.add(enemy_unit)
+                else:
+                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                    enemy_unit = Enemy_Skeleton_Archer(1150, 680)
+                    enemy_units.add(enemy_unit)
+            
+            else:
+                if enemy_rand > game_difficult:
+                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                    enemy_unit = Enemy_Skeleton_Spear(1150, 680)
+                    enemy_units.add(enemy_unit)
+                elif game_difficult >= enemy_rand > max_rand - game_difficult:
+                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                    enemy_unit = Enemy_Skeleton_Archer(1150, 680)
+                    enemy_units.add(enemy_unit)
+                else:
+                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                    enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+                    enemy_units.add(enemy_unit)
 
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
