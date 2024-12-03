@@ -128,7 +128,7 @@ class Unit(GameObject):
             self.shot_motion(shot_complition)
 
     def shot_arrow(self, enemy, shot_complition):
-        if self.is_shot and self.x + 200 > enemy.x and enemy.hp > 0:
+        if self.is_shot and not self.flipped and self.x + 200 > enemy.x and enemy.hp > 0:
             self.target = enemy
             self.shot_motion(shot_complition)
         return True
@@ -213,6 +213,7 @@ class Enemy_Skeleton_Warrior(Unit):
             self.attack_sprites = Enemy_Skeleton_Warrior.attack_sprites
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
         self.damage = 10
+        self.price = 32
 
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False):
@@ -410,6 +411,7 @@ class Menu:
 
 class Gold:
     now = 10000
+    total_earn = 0
     def __init__(self):
         self.gold_box = pygame.Rect(25, 10, 300, 100)
         self.gold_img = self.load("menu/gold.png")
@@ -565,6 +567,7 @@ while True:
                 enemy.attack = False
             if enemy.is_dead:
                 enemy_units.remove(enemy)
+                gold.update(enemy.price)
             
             if menu_bar.turret:
                 menu_bar.turret.set_target(enemy)
