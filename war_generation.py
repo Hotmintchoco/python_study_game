@@ -220,7 +220,7 @@ class Turret(GameObject):
         self.is_shot = False
         self.target = None
         self.shot_time = 0
-        self.turret_speed = 20 # 낮을수록 빠름
+        self.turret_speed = 25 # 낮을수록 빠름
         super().__init__(x, y)
     
     def init_sprites(self):
@@ -234,7 +234,7 @@ class Turret(GameObject):
         return self.sprites
     
     def set_target(self, enemy):
-        if menu_bar.turret.x + 300 > enemy.x:
+        if menu_bar.turret.x + 400 > enemy.x:
             if not self.target:
                 self.target = enemy
                 self.shot_time = 0
@@ -248,6 +248,7 @@ class Turret(GameObject):
                 target_x_distance = self.target.x - self.x
                 target_y_distance = self.target.y - self.y
                 new_shell = Shell(self.x+35, self.y, vx=target_x_distance/self.turret_speed, vy=target_y_distance/self.turret_speed)
+                print(target_x_distance/self.turret_speed)
                 shells.add(new_shell)
                 self.shot_time = 0
 
@@ -297,6 +298,7 @@ class Menu:
         self.unit_create_time_rect = pygame.Rect(350, 15, 10, 35)
 
         self.unit_price = 0
+        self.turret_price = 200
         self.dict_unit_price = {
             25 : Skeleton_Warrior,
             50 : Skeleton_Archer,
@@ -313,7 +315,11 @@ class Menu:
         return s
     
     def update(self):
-        self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
+        if self.unit_menu:
+            self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
+        else:
+            self.menu_text = menu_font.render(f"Turret_Price = {self.turret_price}", 1, (125, 125, 125))
+
         if self.is_unit_create_time and self.unit_create_gauge <= Menu.MAX_GAUGE:
             self.unit_create_gauge += self.list_unit_create_gauge[self.menu_index]
             self.unit_create_time_rect = pygame.Rect(350, 15, self.unit_create_gauge, 25)
@@ -364,6 +370,10 @@ class Menu:
             elif self.third_img_rect.collidepoint(pos):
                 self.unit_price = self.list_unit_price[2]
                 screen.blit(self.menu_text, (350, 75))
+        
+        else:
+            if self.second_img_rect.collidepoint(pos):
+                screen.blit(self.menu_text, (350, 75))
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
@@ -371,7 +381,7 @@ class Menu:
                 self.menu_index = 0
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
-                self.buy_unit(self.unit_price)
+                self.buy_unit(self.buy_unit_price)
             self.unit_menu = True
             self.unit_click()
 
@@ -380,17 +390,18 @@ class Menu:
                 self.menu_index = 1
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
-                self.buy_unit(self.unit_price)
-            else:
+                self.buy_unit(self.buy_unit_price)
+            elif not self.turret:
                 self.turret = Turret(125, 550, flipped=True)
                 turrets.add(self.turret)
+                Gold.now -= self.turret_price
 
         elif self.third_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
                 self.menu_index = 2
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
-                self.buy_unit(self.unit_price)
+                self.buy_unit(self.buy_unit_price)
 
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
@@ -524,7 +535,7 @@ while True:
                 handle_timer_events()
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
-        if random.random() > 0.995 and len(enemy_units) < 5:
+        if random.random() > 0.992 and len(enemy_units) < 5:
             enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
             enemy_units.add(enemy_unit)
         
