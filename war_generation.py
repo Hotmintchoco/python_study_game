@@ -141,6 +141,10 @@ class Unit(GameObject):
         if self.is_shot and not self.flipped and self.x + 200 > enemy.x and enemy.hp > 0:
             self.target = enemy
             self.shot_motion(shot_complition)
+
+        elif self.is_shot and self.flipped and self.x - 200 < enemy.x and enemy.hp > 0:
+            self.target = enemy
+            self.shot_motion(shot_complition)
         return True
         
     def unit_hp_draw(self, pos):
@@ -578,7 +582,7 @@ while True:
         if random.random() > 0.992 and len(enemy_units) < 5:
             enemy_unit = Enemy_Skeleton_Archer(1150, 680)
             enemy_units.add(enemy_unit)
-        
+
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
 
@@ -637,6 +641,12 @@ while True:
             if unit.is_dead:
                 unit_sprites.remove(unit)
 
+            for arrow in enemy_arrows.copy():
+                if arrow.x < unit.x + 10:
+                    unit.hp -= arrow.damage
+                    enemy_arrows.remove(arrow)
+                    print(unit.hp)
+
         for arrow in arrows.copy():
             if arrow.rect.colliderect(enemy_tree.collide_rect):
                 enemy_tree.hp -= arrow.damage
@@ -655,10 +665,11 @@ while True:
                 dead_unit_sprites.remove(dead_unit)
 
         for unit in unit_sprites.copy():
-            unit.shot_complition = unit.shot_tree(enemy_tree, unit.shot_complition)
+            unit.shot_tree(enemy_tree, unit.shot_complition)
             for enemy in enemy_units.copy():
                 unit.fighting(enemy)
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
+                enemy.shot_complition = enemy.shot_arrow(unit, enemy.shot_complition)
                 enemy.fighting(unit)
 
         menu_bar.update()
