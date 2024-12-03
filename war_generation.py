@@ -117,15 +117,25 @@ class Unit(GameObject):
     def shot_motion(self, shot_complition):
         self.vx = 0
         self.attack = True
-        if 12.01 < self.sprite_id < 12.2 and not shot_complition:
+        if 12.01 < self.sprite_id < 12.2 and not shot_complition and not self.flipped:
             new_arrow = Arrow(self.x-5, self.y-10)
             arrows.add(new_arrow)
             print(self.sprite_id)
+        elif 12.01 < self.sprite_id < 12.2 and not shot_complition and self.flipped:
+            new_arrow = Enemy_Arrow(self.x+5, self.y-10)
+            enemy_arrows.add(new_arrow)
+            print(self.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
-        if self.is_shot and self.x + 225 > tree.x and not self.target:
+        if self.is_shot and not self.flipped and self.x + 225 > tree.x and not self.target:
             self.target_tree = True
             self.shot_motion(shot_complition)
+
+        elif self.is_shot and self.flipped and self.x - 225 < tree.x and not self.target:
+            self.target_tree = True
+            self.shot_motion(shot_complition)
+        
+        return True
 
     def shot_arrow(self, enemy, shot_complition):
         if self.is_shot and not self.flipped and self.x + 200 > enemy.x and enemy.hp > 0:
@@ -215,6 +225,21 @@ class Enemy_Skeleton_Warrior(Unit):
         self.damage = 10
         self.price = 32
 
+class Enemy_Skeleton_Archer(Unit):
+    run_sprites = []
+    attack_sprites = []
+
+    def __init__(self, x, y, img_file="Unit/Skeleton_Archer/Skeleton"):
+        if Enemy_Skeleton_Archer.run_sprites:
+            self.run_sprites = Enemy_Skeleton_Archer.run_sprites
+
+        if Enemy_Skeleton_Archer.attack_sprites:
+            self.attack_sprites = Enemy_Skeleton_Archer.attack_sprites
+        super().__init__(x, y, img_file, is_shot=True, flipped=True, unit_vx=-1.5)
+        self.shot_complition = False
+        self.ds = 0.19
+        self.price = 65
+
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False):
         self.flipped = flipped
@@ -279,7 +304,19 @@ class Arrow(GameObject):
             img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
             Arrow.source_sprites = [img]
         return Arrow.source_sprites
-    
+
+class Enemy_Arrow(GameObject):
+    source_sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, vx=-10.0)
+        self.damage = 25
+    def init_sprites(self):
+        if not Arrow.source_sprites:
+            img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
+            img = pygame.transform.flip(img, True, False)
+            Arrow.source_sprites = [img]
+        return Arrow.source_sprites
+
 class Menu:
     MAX_GAUGE = 325
     def __init__(self):
@@ -522,6 +559,7 @@ while True:
     turrets = pygame.sprite.Group()
     shells = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
+    enemy_arrows = pygame.sprite.Group()
     trees.add(tree)
     trees.add(enemy_tree)
     mixer.music.play(-1)
@@ -538,7 +576,7 @@ while True:
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         if random.random() > 0.992 and len(enemy_units) < 5:
-            enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+            enemy_unit = Enemy_Skeleton_Archer(1150, 680)
             enemy_units.add(enemy_unit)
         
         if menu_bar.is_unit_create:
@@ -558,6 +596,7 @@ while True:
 
         for enemy in enemy_units.copy():
             unit_collide_check(enemy_units, enemy)
+            enemy.shot_complition = False
             enemy.attack_tree(tree)
             if enemy.hp <= 0 and not enemy.is_dead:
                     enemy.is_dead = True
@@ -582,6 +621,9 @@ while True:
                     enemy.hp -= arrow.damage
                     arrows.remove(arrow)
                     print(enemy.hp)
+        
+        for enemy in enemy_units.copy():
+            enemy.shot_tree(tree, enemy.shot_complition)
             
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
@@ -601,13 +643,19 @@ while True:
                 arrows.remove(arrow)
                 print(enemy_tree.hp)
 
+        for arrow in enemy_arrows.copy():
+            if arrow.rect.colliderect(tree.collide_rect):
+                tree.hp -= arrow.damage
+                enemy_arrows.remove(arrow)
+                print(tree.hp)
+
         # unit -> dead_sprites 완료 후 삭제처리
         for dead_unit in dead_unit_sprites.copy():
             if dead_unit.sprite_id >= len(dead_unit.sprites) - 1:
                 dead_unit_sprites.remove(dead_unit)
 
         for unit in unit_sprites.copy():
-            unit.shot_tree(enemy_tree, unit.shot_complition)
+            unit.shot_complition = unit.shot_tree(enemy_tree, unit.shot_complition)
             for enemy in enemy_units.copy():
                 unit.fighting(enemy)
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
@@ -618,6 +666,7 @@ while True:
         enemy_units.update(bgx)
         turrets.update(bgx)
         arrows.update(bgx)
+        enemy_arrows.update(bgx)
         shells.update(bgx)
         dead_unit_sprites.update(bgx)
         trees.update(bgx)
@@ -642,6 +691,7 @@ while True:
             enemy.unit_hp_draw(point)
         turrets.draw(screen)
         arrows.draw(screen)
+        enemy_arrows.draw(screen)
         shells.draw(screen)
         tree.tree_hp_draw()
         enemy_tree.tree_hp_draw()
