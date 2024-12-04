@@ -117,9 +117,11 @@ class Unit(GameObject):
 
     def fighting(self, enemy):
         if not self.is_shot and self.rect.colliderect(enemy.rect) and enemy.hp > 0:
+            self.target_tree = False
             self.target = enemy
             self.attack_motion(enemy)
         elif self.is_shot and self.collide_rect.colliderect(enemy.rect) and enemy.hp > 0:
+            self.target_tree = False
             self.target = enemy
             self.attack_motion(enemy)
        
@@ -135,8 +137,9 @@ class Unit(GameObject):
                 self.target = None
     
     def attack_tree(self, tree):
-        if self.rect.colliderect(tree.collide_rect) and not self.target:
+        if self.rect.colliderect(tree.collide_rect) and self.target.hp <= 0:
             self.target_tree = True
+            self.vx = 0
             self.attack_motion(tree)
         
     def unit_hp_draw(self, pos):
@@ -191,7 +194,7 @@ class Archer_Unit(Unit):
             self.damage = 10
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
-            self.damage = 35
+            self.damage = 50
 
         super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=200)
         self.shot_sprites = self.shot_motion_sprites()
@@ -233,13 +236,19 @@ class Archer_Unit(Unit):
             print(self.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
-        if not self.rect.colliderect(tree.collide_rect) and self.x + 225 > tree.x and not self.target:
-            self.now_shot = True
-            self.target_tree = True
-            self.shot_motion(shot_complition)
+        if self.target:
+            if not self.rect.colliderect(tree.collide_rect) and self.x + 225 > tree.x and self.target.hp <= 0:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition)
+            else:
+                self.now_shot = False
         else:
-            self.now_shot = False
-
+            if not self.rect.colliderect(tree.collide_rect) and self.x + 225 > tree.x:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition)
+            
     def shot_arrow(self, enemy, shot_complition):
         if unit.collide_rect.colliderect(enemy.rect):
             self.collided_unit = True
