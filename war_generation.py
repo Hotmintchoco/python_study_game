@@ -190,8 +190,6 @@ class Archer_Unit(Unit):
                     img = pygame.image.load(
                         f"{self.img_file}_Shot({index}).png"
                     ).convert_alpha()
-                    if self.flipped:
-                        img = pygame.transform.flip(img, True, False)
                     self.shot_sprites.append(img)
                 except:
                     break
@@ -274,17 +272,68 @@ class Enemy_Warrior_Unit(Unit):
 class Enemy_Archer_Unit(Unit):
     run_sprites = []
     attack_sprites = []
+    shot_sprites = []
 
-    def __init__(self, x, y, img_file="Unit/Skeleton_Archer/Skeleton"):
-        if Enemy_Archer_Unit.run_sprites:
-            self.run_sprites = Enemy_Archer_Unit.run_sprites
-
-        if Enemy_Archer_Unit.attack_sprites:
-            self.attack_sprites = Enemy_Archer_Unit.attack_sprites
-        super().__init__(x, y, img_file, is_shot=True, flipped=True, unit_vx=-1.5)
-        self.shot_complition = False
+    def __init__(self, x, y, unit_level=1):
+        if unit_level == 1:
+            self.img_file="Unit/Skeleton_Archer/Skeleton"
+            self.damage = 10
+        elif unit_level == 2:
+            self.img_file = "Unit/Samurai_Archer/Samurai"
+            self.damage = 35
+        
+        super().__init__(x, y, self.img_file, is_shot=True, flipped=True, unit_vx=-1.5)
+        self.shot_sprites = self.shot_motion_sprites()
         self.ds = 0.19
         self.price = 65
+    
+    def shot_motion_sprites(self):
+        if not self.shot_sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"{self.img_file}_Shot({index}).png"
+                    ).convert_alpha()
+                    img = pygame.transform.flip(img, True, False)
+                    self.shot_sprites.append(img)
+                except:
+                    break
+        return self.shot_sprites
+    
+    def update(self, bgx):
+        super().update(bgx)
+        if self.now_shot:
+            self.sprites = self.shot_sprites
+        elif self.attack:
+            self.sprites = self.attack_sprites
+        else:
+            self.sprites = self.run_sprites
+        
+    def shot_motion(self, shot_complition):
+        if 12.01 < self.sprite_id < 12.2 and not shot_complition:
+            new_arrow = Enemy_Arrow(self.x+5, self.y-10)
+            enemy_arrows.add(new_arrow)
+            print(self.sprite_id)
+
+    def shot_tree(self, tree, shot_complition):
+        if not self.rect.colliderect(tree.collide_rect):
+            if self.flipped and self.x - 225 < tree.x and not self.target:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition)
+        else:
+            self.now_shot = False
+
+    def shot_arrow(self, enemy, shot_complition):
+        if not self.rect.colliderect(enemy.rect):
+            if self.flipped and self.x - 200 < enemy.x and enemy.hp > 0:
+                self.now_shot = True
+                self.target = enemy
+                self.shot_motion(shot_complition)
+            return True
+        return False
 
 class Enemy_Skeleton_Spear(Unit):
     run_sprites = []
@@ -603,8 +652,12 @@ def handle_timer_events():
                 unit.vx = 0.3
     
     for enemy in enemy_units:
-        if enemy.vx == 0:
+        if enemy.vx > -1:
             enemy.vx = -1.5  # 다시 이동
+
+        if enemy.is_shot:
+            if enemy.now_shot:
+                enemy.vx = -0.3
            
 def unit_collide_check(unit_sprites, unit):
     """유닛들이 겹치지 않게 체크"""
@@ -664,7 +717,6 @@ while True:
                 handle_timer_events()
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
-        """
         rand = random.random()
         if 400 > Gold.total_earn > 200:
             game_difficult = 3
@@ -696,7 +748,6 @@ while True:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Warrior_Unit(1150, 680)
                     enemy_units.add(enemy_unit)
-        """
                     
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
@@ -742,7 +793,8 @@ while True:
                     print(enemy.hp)
         
         for enemy in enemy_units.copy():
-            enemy.shot_tree(tree, enemy.shot_complition)
+            if enemy.is_shot:
+                enemy.shot_tree(tree, enemy.shot_complition)
             
         for unit in unit_sprites.copy():
             unit_collide_check(unit_sprites, unit)
@@ -784,9 +836,11 @@ while True:
                 unit.shot_tree(enemy_tree, unit.shot_complition)
             for enemy in enemy_units.copy():
                 unit.fighting(enemy)
-                unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
-                enemy.shot_complition = enemy.shot_arrow(unit, enemy.shot_complition)
                 enemy.fighting(unit)
+                if unit.is_shot:
+                    unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
+                if enemy.is_shot:
+                    enemy.shot_complition = enemy.shot_arrow(unit, enemy.shot_complition)
 
         menu_bar.update()
         unit_sprites.update(bgx)
