@@ -33,8 +33,9 @@ class GameObject(pygame.sprite.Sprite):
 
 class Unit(GameObject):
     def __init__(self, x, y, img_file, flipped=False, is_shot=False,
-                  unit_vx=1.5, unit_ds=0.1):
+                  unit_vx=1.5, unit_ds=0.1, level=1):
         self.img_file = img_file
+        self.level = level
         self.attack = False
         self.target = None
         self.is_dead = False
@@ -179,14 +180,20 @@ class Skeleton_Warrior(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, img_file="Unit/Skeleton_Warrior/Skeleton"):
+    def __init__(self, x, y, unit_level=1):
+        if unit_level == 1:
+            img_file="Unit/Skeleton_Warrior/Skeleton"
+            self.damage = 10
+        if unit_level == 2:
+            img_file = "Unit/Samurai/Samurai"
+            self.damage = 35
+        
         if Skeleton_Warrior.run_sprites:
             self.run_sprites = Skeleton_Warrior.run_sprites
 
         if Skeleton_Warrior.attack_sprites:
             self.attack_sprites = Skeleton_Warrior.attack_sprites
-        super().__init__(x, y, img_file)
-        self.damage = 10
+        super().__init__(x, y, img_file, level=unit_level)
 
 class Skeleton_Archer(Unit):
     run_sprites = []
@@ -344,6 +351,7 @@ class Menu:
         self.is_unit_create = False # 유닛이 생성 시간이 다 채워지면 True
         self.is_unit_create_time = False # 유닛 생성 시간 이미지
         self.turret = None
+        self.upgrade_level = 1
         
         self.first_img_rect = self.first_img.get_rect(topleft=(725, 60))  # Unit image position
         self.second_img_rect = self.second_img.get_rect(topleft=(800, 60))
@@ -352,7 +360,7 @@ class Menu:
         self.unit_create_time_rect = pygame.Rect(350, 15, 10, 35)
 
         self.unit_price = 0
-        self.turret_price = 200
+        self.menu_price = 200
         self.dict_unit_price = {
             25 : Skeleton_Warrior,
             50 : Skeleton_Archer,
@@ -372,7 +380,7 @@ class Menu:
         if self.unit_menu:
             self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
         else:
-            self.menu_text = menu_font.render(f"Turret_Price = {self.turret_price}", 1, (125, 125, 125))
+            self.menu_text = menu_font.render(f"Price = {self.menu_price}", 1, (125, 125, 125))
 
         if self.is_unit_create_time and self.unit_create_gauge <= Menu.MAX_GAUGE:
             self.unit_create_gauge += self.list_unit_create_gauge[self.menu_index]
@@ -398,7 +406,9 @@ class Menu:
 
     def create_unit(self):
         self.is_unit_create = False
-        return self.dict_unit_price[self.buy_unit_price](180, 680)
+        if self.upgrade_level > 1:
+            return self.dict_unit_price[self.buy_unit_price](180, 670, self.upgrade_level)
+        return self.dict_unit_price[self.buy_unit_price](180, 680, self.upgrade_level)
 
     def buy_unit(self, unit_price):
         Gold.now -= unit_price
@@ -427,7 +437,19 @@ class Menu:
         
         else:
             if self.second_img_rect.collidepoint(pos):
+                self.menu_price = 200
                 screen.blit(self.menu_text, (350, 75))
+            
+            elif self.forth_img_rect.collidepoint(pos):
+                self.menu_price = 4000
+                screen.blit(self.menu_text, (350, 75))
+
+    def upgrade_click(self):
+        self.upgrade_level += 1
+        print(f"현재 level = {self.upgrade_level}")
+        Gold.now -= self.menu_price
+        Skeleton_Warrior.run_sprites = []
+        Skeleton_Warrior.attack_sprites = [] 
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
@@ -445,10 +467,10 @@ class Menu:
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.buy_unit_price)
-            elif not self.turret:
+            elif not self.turret and Gold.now >= self.menu_price:
                 self.turret = Turret(125, 550, flipped=True)
                 turrets.add(self.turret)
-                Gold.now -= self.turret_price
+                Gold.now -= self.menu_price
 
         elif self.third_img_rect.collidepoint(pos):
             if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
@@ -461,9 +483,11 @@ class Menu:
             if self.unit_menu:
                 self.main_menu()
                 self.unit_menu = False
+            elif Gold.now >= self.menu_price:
+                self.upgrade_click()
 
 class Gold:
-    now = 10000
+    now = 6000
     total_earn = 0
     def __init__(self):
         self.gold_box = pygame.Rect(25, 10, 300, 100)
@@ -595,6 +619,7 @@ while True:
                 handle_timer_events()
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
+        """
         rand = random.random()
         if 400 > Gold.total_earn > 200:
             game_difficult = 3
@@ -626,7 +651,8 @@ while True:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
                     enemy_units.add(enemy_unit)
-
+        """
+                    
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
 
