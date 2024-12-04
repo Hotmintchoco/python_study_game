@@ -40,6 +40,8 @@ class Unit(GameObject):
         self.target = None
         self.is_dead = False
         self.target_tree = False
+        self.shot_complition = False
+        self.now_shot = False
         self.is_shot = is_shot
         self.flipped = flipped
         self.hp = 50
@@ -84,24 +86,30 @@ class Unit(GameObject):
         return self.attack_sprites
     
     def update(self, bgx):
-        if self.attack:
-            self.sprites = self.attack_sprites
-        else:
-            self.sprites = self.run_sprites
+        if not self.is_shot:
+            if self.attack:
+                self.sprites = self.attack_sprites
+            else:
+                self.sprites = self.run_sprites
         super().update(bgx)
         self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp // self.hp_divide, 5)
     
-    def fight_motion(self, target):
+    def attack_motion(self, target):
         self.vx = 0
         self.attack = True
-        if 3 < self.sprite_id < 3.1:
-            target.hp -= self.damage
-            print(target.hp)
+        if self.level == 1:
+            if 3 < self.sprite_id < 3.1:
+                target.hp -= self.damage
+                print(target.hp)
+        else:
+            if 4.8 < self.sprite_id < 4.9:
+                target.hp -= self.damage
+                print(target.hp)
 
     def fighting(self, enemy):
-        if self.rect.colliderect(enemy.rect) and not self.is_shot and enemy.hp > 0:
+        if self.rect.colliderect(enemy.rect) and enemy.hp > 0:
             self.target = enemy
-            self.fight_motion(enemy)
+            self.attack_motion(enemy)
         if self.target:
             if self.target.hp <= 0 and not self.flipped:
                 self.attack = False
@@ -111,42 +119,9 @@ class Unit(GameObject):
                 self.target = None
     
     def attack_tree(self, tree):
-        if self.rect.colliderect(tree.collide_rect) and not self.is_shot and not self.target:
+        if self.rect.colliderect(tree.collide_rect) and not self.target:
             self.target_tree = True
-            self.fight_motion(tree)
-
-    def shot_motion(self, shot_complition):
-        self.vx = 0
-        self.attack = True
-        if 12.01 < self.sprite_id < 12.2 and not shot_complition and not self.flipped:
-            new_arrow = Arrow(self.x-5, self.y-10)
-            arrows.add(new_arrow)
-            print(self.sprite_id)
-        elif 12.01 < self.sprite_id < 12.2 and not shot_complition and self.flipped:
-            new_arrow = Enemy_Arrow(self.x+5, self.y-10)
-            enemy_arrows.add(new_arrow)
-            print(self.sprite_id)
-
-    def shot_tree(self, tree, shot_complition):
-        if self.is_shot and not self.flipped and self.x + 225 > tree.x and not self.target:
-            self.target_tree = True
-            self.shot_motion(shot_complition)
-
-        elif self.is_shot and self.flipped and self.x - 225 < tree.x and not self.target:
-            self.target_tree = True
-            self.shot_motion(shot_complition)
-        
-        return True
-
-    def shot_arrow(self, enemy, shot_complition):
-        if self.is_shot and not self.flipped and self.x + 200 > enemy.x and enemy.hp > 0:
-            self.target = enemy
-            self.shot_motion(shot_complition)
-
-        elif self.is_shot and self.flipped and self.x - 200 < enemy.x and enemy.hp > 0:
-            self.target = enemy
-            self.shot_motion(shot_complition)
-        return True
+            self.attack_motion(tree)
         
     def unit_hp_draw(self, pos):
         if self.rect.collidepoint(pos):
@@ -176,7 +151,7 @@ class Dead_Skeleton(GameObject):
                 break                
         return self.sprites
          
-class Skeleton_Warrior(Unit):
+class Warrior_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
@@ -184,30 +159,90 @@ class Skeleton_Warrior(Unit):
         if unit_level == 1:
             img_file="Unit/Skeleton_Warrior/Skeleton"
             self.damage = 10
-        if unit_level == 2:
+        elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
             self.damage = 35
-        
-        if Skeleton_Warrior.run_sprites:
-            self.run_sprites = Skeleton_Warrior.run_sprites
-
-        if Skeleton_Warrior.attack_sprites:
-            self.attack_sprites = Skeleton_Warrior.attack_sprites
         super().__init__(x, y, img_file, level=unit_level)
 
-class Skeleton_Archer(Unit):
+class Archer_Unit(Unit):
     run_sprites = []
     attack_sprites = []
+    shot_sprites = []
 
-    def __init__(self, x, y, img_file="Unit/Skeleton_Archer/Skeleton"):
-        if Skeleton_Archer.run_sprites:
-            self.run_sprites = Skeleton_Archer.run_sprites
+    def __init__(self, x, y, unit_level=1):
+        if unit_level == 1:
+            self.img_file="Unit/Skeleton_Archer/Skeleton"
+            self.damage = 10
+        elif unit_level == 2:
+            self.img_file = "Unit/Samurai_Archer/Samurai"
+            self.damage = 35
 
-        if Skeleton_Archer.attack_sprites:
-            self.attack_sprites = Skeleton_Archer.attack_sprites
-        super().__init__(x, y, img_file, is_shot=True)
-        self.shot_complition = False
+        super().__init__(x, y, self.img_file, level=unit_level, is_shot=True)
+        self.shot_sprites = self.shot_motion_sprites()
         self.ds = 0.19
+    
+    def shot_motion_sprites(self):
+        if not self.shot_sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"{self.img_file}_Shot({index}).png"
+                    ).convert_alpha()
+                    if self.flipped:
+                        img = pygame.transform.flip(img, True, False)
+                    self.shot_sprites.append(img)
+                except:
+                    break
+        return self.shot_sprites
+
+    def update(self, bgx):
+        super().update(bgx)
+        if self.now_shot:
+            self.sprites = self.shot_sprites
+        elif self.attack:
+            self.sprites = self.attack_sprites
+        else:
+            self.sprites = self.run_sprites
+        
+    def shot_motion(self, shot_complition):
+        if 12.01 < self.sprite_id < 12.2 and not shot_complition and not self.flipped:
+            new_arrow = Arrow(self.x-5, self.y-10)
+            arrows.add(new_arrow)
+            print(self.sprite_id)
+        elif 12.01 < self.sprite_id < 12.2 and not shot_complition and self.flipped:
+            new_arrow = Enemy_Arrow(self.x+5, self.y-10)
+            enemy_arrows.add(new_arrow)
+            print(self.sprite_id)
+
+    def shot_tree(self, tree, shot_complition):
+        if not self.rect.colliderect(tree.collide_rect):
+            if not self.flipped and self.x + 225 > tree.x and not self.target:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition)
+
+            elif self.flipped and self.x - 225 < tree.x and not self.target:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition)
+        else:
+            self.now_shot = False
+
+    def shot_arrow(self, enemy, shot_complition):
+        if not (self.rect.colliderect(enemy.rect) or self.rect.colliderect(tree.collide_rect)):
+            if not self.flipped and self.x + 200 > enemy.x and enemy.hp > 0:
+                self.now_shot = True
+                self.target = enemy
+                self.shot_motion(shot_complition)
+
+            elif self.flipped and self.x - 200 < enemy.x and enemy.hp > 0:
+                self.now_shot = True
+                self.target = enemy
+                self.shot_motion(shot_complition)
+            return True
+        return False
 
 class Skeleton_Spear(Unit):
     run_sprites = []
@@ -222,30 +257,30 @@ class Skeleton_Spear(Unit):
         super().__init__(x, y, img_file)
         self.damage = 25
 
-class Enemy_Skeleton_Warrior(Unit):
+class Enemy_Warrior_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
     def __init__(self, x, y, img_file="Unit/Skeleton_Warrior/Skeleton"):
-        if Enemy_Skeleton_Warrior.run_sprites:
-            self.run_sprites = Enemy_Skeleton_Warrior.run_sprites
+        if Enemy_Warrior_Unit.run_sprites:
+            self.run_sprites = Enemy_Warrior_Unit.run_sprites
 
-        if Enemy_Skeleton_Warrior.attack_sprites:
-            self.attack_sprites = Enemy_Skeleton_Warrior.attack_sprites
+        if Enemy_Warrior_Unit.attack_sprites:
+            self.attack_sprites = Enemy_Warrior_Unit.attack_sprites
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
         self.damage = 10
         self.price = 32
 
-class Enemy_Skeleton_Archer(Unit):
+class Enemy_Archer_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
     def __init__(self, x, y, img_file="Unit/Skeleton_Archer/Skeleton"):
-        if Enemy_Skeleton_Archer.run_sprites:
-            self.run_sprites = Enemy_Skeleton_Archer.run_sprites
+        if Enemy_Archer_Unit.run_sprites:
+            self.run_sprites = Enemy_Archer_Unit.run_sprites
 
-        if Enemy_Skeleton_Archer.attack_sprites:
-            self.attack_sprites = Enemy_Skeleton_Archer.attack_sprites
+        if Enemy_Archer_Unit.attack_sprites:
+            self.attack_sprites = Enemy_Archer_Unit.attack_sprites
         super().__init__(x, y, img_file, is_shot=True, flipped=True, unit_vx=-1.5)
         self.shot_complition = False
         self.ds = 0.19
@@ -362,8 +397,8 @@ class Menu:
         self.unit_price = 0
         self.menu_price = 200
         self.dict_unit_price = {
-            25 : Skeleton_Warrior,
-            50 : Skeleton_Archer,
+            25 : Warrior_Unit,
+            50 : Archer_Unit,
             150 : Skeleton_Spear
         }
         self.list_unit_price = list(self.dict_unit_price.keys())
@@ -446,10 +481,14 @@ class Menu:
 
     def upgrade_click(self):
         self.upgrade_level += 1
+        self.list_unit_create_gauge = [3, 2, 1]
         print(f"현재 level = {self.upgrade_level}")
         Gold.now -= self.menu_price
-        Skeleton_Warrior.run_sprites = []
-        Skeleton_Warrior.attack_sprites = [] 
+        Warrior_Unit.run_sprites = []
+        Warrior_Unit.attack_sprites = []
+        Archer_Unit.run_sprites = []
+        Archer_Unit.attack_sprites = []
+        Archer_Unit.shot_sprites = [] 
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
@@ -553,11 +592,15 @@ class Tree(GameObject):
     def tree_hp_draw(self):
         pygame.draw.rect(screen, (225, 94, 0), self.hp_bar)
 
-# 이벤트 발생이후 실행사항 
+# 이벤트 발생이후 실행사항 / 유닛 이동속도 처리
 def handle_timer_events():
     for unit in unit_sprites:
-        if unit.vx == 0:
+        if unit.vx < 1:
             unit.vx = 1.5  # 다시 이동
+
+        if unit.is_shot:
+            if unit.now_shot:
+                unit.vx = 0.3
     
     for enemy in enemy_units:
         if enemy.vx == 0:
@@ -569,8 +612,10 @@ def unit_collide_check(unit_sprites, unit):
     for collided_unit in collided_sprites:
         if collided_unit.created_time > unit.created_time:
             collided_unit.vx = 0
-            if not collided_unit.attack:
-                 collided_unit.sprite_id = 0
+
+            if not collided_unit.attack and not collided_unit.now_shot:
+                collided_unit.sprite_id = 0
+            
         # 일정 시간이 지나면 다시 이동하도록 타이머 설정
         pygame.time.set_timer(pygame.USEREVENT + 1, 10, True)
     
@@ -631,11 +676,11 @@ while True:
             if game_difficult < 4:
                 if enemy_rand >= game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680)
                     enemy_units.add(enemy_unit)
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Skeleton_Archer(1150, 680)
+                    enemy_unit = Enemy_Archer_Unit(1150, 680)
                     enemy_units.add(enemy_unit)
             
             else:
@@ -645,11 +690,11 @@ while True:
                     enemy_units.add(enemy_unit)
                 elif game_difficult >= enemy_rand > max_rand - game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Skeleton_Archer(1150, 680)
+                    enemy_unit = Enemy_Archer_Unit(1150, 680)
                     enemy_units.add(enemy_unit)
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Skeleton_Warrior(1150, 680)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680)
                     enemy_units.add(enemy_unit)
         """
                     
@@ -735,7 +780,8 @@ while True:
                 dead_unit_sprites.remove(dead_unit)
 
         for unit in unit_sprites.copy():
-            unit.shot_tree(enemy_tree, unit.shot_complition)
+            if unit.is_shot:
+                unit.shot_tree(enemy_tree, unit.shot_complition)
             for enemy in enemy_units.copy():
                 unit.fighting(enemy)
                 unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
