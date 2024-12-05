@@ -103,17 +103,13 @@ class Unit(GameObject):
         if self.level == 1:
             if 3 < self.sprite_id < 3.1 and not self.is_shot:
                 target.hp -= self.damage
-                print(target.hp)
             elif 3 < self.sprite_id < 3.2 and self.is_shot:
                 target.hp -= self.damage
-                print(target.hp)
         else:
             if 4.8 < self.sprite_id < 4.9 and not self.is_shot:
                 target.hp -= self.damage
-                print(target.hp)
             elif 4 < self.sprite_id < 4.2 and self.is_shot:
                 target.hp -= self.damage
-                print(target.hp)
 
     def fighting(self, enemy):
         if not self.is_shot and self.rect.colliderect(enemy.rect) and enemy.hp > 0:
@@ -201,7 +197,7 @@ class Archer_Unit(Unit):
         self.ds = 0.19
         self.collide_rect = pygame.Rect(
             self.x, self.y, 
-            self.rect.width + 35, 
+            self.rect.width + 20, 
             self.rect.height
         )
     
@@ -230,10 +226,16 @@ class Archer_Unit(Unit):
             self.sprites = self.run_sprites
         
     def shot_motion(self, shot_complition):
+        arrow_y = self.y
+        if self.level == 1:
+            arrow_y = self.y-10
+            new_arrow = Arrow(self.x-5, arrow_y)
+        else:
+            arrow_y = self.y+5
+            new_arrow = Samurai_Arrow(self.x-5, arrow_y)
+
         if 12.01 < self.sprite_id < 12.2 and not shot_complition and self.now_shot:
-            new_arrow = Arrow(self.x-5, self.y-10)
             arrows.add(new_arrow)
-            print(self.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
         if self.target:
@@ -298,9 +300,11 @@ class Enemy_Archer_Unit(Unit):
         if unit_level == 1:
             self.img_file="Unit/Skeleton_Archer/Skeleton"
             self.damage = 10
+            self.shot_distance = 200
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
             self.damage = 35
+            self.shot_distance = 250
         
         super().__init__(x, y, self.img_file, is_shot=True, flipped=True, unit_vx=-1.5)
         self.shot_sprites = self.shot_motion_sprites()
@@ -339,7 +343,7 @@ class Enemy_Archer_Unit(Unit):
 
     def shot_tree(self, tree, shot_complition):
         if not self.rect.colliderect(tree.collide_rect):
-            if self.flipped and self.x - 225 < tree.x and not self.target:
+            if self.flipped and self.x - (self.shot_distance + 25) < tree.x and not self.target:
                 self.now_shot = True
                 self.target_tree = True
                 self.shot_motion(shot_complition)
@@ -348,7 +352,7 @@ class Enemy_Archer_Unit(Unit):
 
     def shot_arrow(self, enemy, shot_complition):
         if not self.rect.colliderect(enemy.rect):
-            if self.flipped and self.x - 200 < enemy.x and enemy.hp > 0:
+            if self.flipped and self.x - self.shot_distance < enemy.x and enemy.hp > 0:
                 self.now_shot = True
                 self.target = enemy
                 self.shot_motion(shot_complition)
@@ -431,6 +435,17 @@ class Arrow(GameObject):
             img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
             Arrow.source_sprites = [img]
         return Arrow.source_sprites
+
+class Samurai_Arrow(GameObject):
+    source_sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, vx=10.0)
+        self.damage = 50
+    def init_sprites(self):
+        if not Samurai_Arrow.source_sprites:
+            img = pygame.image.load("Unit/Samurai_Archer/Arrow.png").convert_alpha()
+            Samurai_Arrow.source_sprites = [img]
+        return Samurai_Arrow.source_sprites
 
 class Enemy_Arrow(GameObject):
     source_sprites = []
@@ -557,7 +572,7 @@ class Menu:
         Warrior_Unit.attack_sprites = []
         Archer_Unit.run_sprites = []
         Archer_Unit.attack_sprites = []
-        Archer_Unit.shot_sprites = [] 
+        Archer_Unit.shot_sprites = []
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
@@ -810,7 +825,6 @@ while True:
                 if arrow.x > enemy.x - 10:
                     enemy.hp -= arrow.damage
                     arrows.remove(arrow)
-                    print(enemy.hp)
         
         for enemy in enemy_units.copy():
             if enemy.is_shot:
@@ -838,7 +852,7 @@ while True:
             if arrow.rect.colliderect(enemy_tree.collide_rect):
                 enemy_tree.hp -= arrow.damage
                 arrows.remove(arrow)
-                print(enemy_tree.hp)
+                print("화살피격/ enemy_tree.hp: ", enemy_tree.hp)
 
         for arrow in enemy_arrows.copy():
             if arrow.rect.colliderect(tree.collide_rect):
