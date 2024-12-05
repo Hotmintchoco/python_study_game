@@ -583,6 +583,12 @@ class Menu:
 
     def upgrade_click(self):
         self.upgrade_level += 1
+        self.dict_unit_price = {
+            150 : Warrior_Unit,
+            200 : Archer_Unit,
+            500 : Commander_Unit
+        }
+        self.list_unit_price = list(self.dict_unit_price.keys())
         self.list_unit_create_gauge = [3, 2, 1]
         print(f"현재 level = {self.upgrade_level}")
         Gold.now -= self.menu_price
