@@ -180,10 +180,12 @@ class Warrior_Unit(Unit):
         if unit_level == 1:
             img_file="Unit/Skeleton_Warrior/Skeleton"
             self.damage = 10
+            unit_hp = 100
         elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
             self.damage = 35
-        super().__init__(x, y, img_file, level=unit_level)
+            unit_hp = 200
+        super().__init__(x, y, img_file, level=unit_level, hp=unit_hp)
 
 class Archer_Unit(Unit):
     run_sprites = []
@@ -481,6 +483,8 @@ class Menu:
         self.unit_menu = False
         self.is_unit_create = False # 유닛이 생성 시간이 다 채워지면 True
         self.is_unit_create_time = False # 유닛 생성 시간 이미지
+        self.bool_add_unit = False
+        self.upgrade_stand = False
         self.turret = None
         self.upgrade_level = 1
         
@@ -520,6 +524,11 @@ class Menu:
             self.is_unit_create = True 
             self.is_unit_create_time = False
             self.unit_create_gauge = 0
+
+        # 유닛 생성이 완료된 후 업그레이드
+        if self.upgrade_stand and self.bool_add_unit:
+            self.upgrade_click()
+            self.upgrade_stand = False
         
     # 메인 메뉴의 이미지들
     def main_menu(self):
@@ -543,6 +552,7 @@ class Menu:
 
     def create_unit(self):
         self.is_unit_create = False
+        self.bool_add_unit = False
         if self.upgrade_level > 1:
             return self.dict_unit_price[self.buy_unit_price](180, 670, self.upgrade_level)
         return self.dict_unit_price[self.buy_unit_price](180, 680, self.upgrade_level)
@@ -591,7 +601,6 @@ class Menu:
         self.list_unit_price = list(self.dict_unit_price.keys())
         self.list_unit_create_gauge = [3, 2, 1]
         print(f"현재 level = {self.upgrade_level}")
-        Gold.now -= self.menu_price
         Warrior_Unit.run_sprites = []
         Warrior_Unit.attack_sprites = []
         Archer_Unit.run_sprites = []
@@ -633,7 +642,8 @@ class Menu:
                 self.main_menu()
                 self.unit_menu = False
             elif Gold.now >= self.menu_price:
-                self.upgrade_click()
+                self.upgrade_stand = True
+                Gold.now -= self.menu_price
 
 class Gold:
     now = 6000
@@ -812,6 +822,7 @@ while True:
                     
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
+            menu_bar.bool_add_unit = True
 
         if menu_bar.turret:
             menu_bar.turret.shot_turret()
