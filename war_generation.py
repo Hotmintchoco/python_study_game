@@ -194,16 +194,20 @@ class Archer_Unit(Unit):
         if unit_level == 1:
             self.img_file="Unit/Skeleton_Archer/Skeleton"
             self.damage = 10
+            add_collide_rect = 20
+            unit_hp = 50
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
-            self.damage = 50
+            self.damage = 20
+            add_collide_rect = 5
+            unit_hp = 100
 
-        super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=200)
+        super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=unit_hp)
         self.shot_sprites = self.shot_motion_sprites()
         self.ds = 0.19
         self.collide_rect = pygame.Rect(
             self.x, self.y, 
-            self.rect.width + 20, 
+            self.rect.width + add_collide_rect, 
             self.rect.height
         )
     
@@ -295,7 +299,7 @@ class Enemy_Warrior_Unit(Unit):
 
         if Enemy_Warrior_Unit.attack_sprites:
             self.attack_sprites = Enemy_Warrior_Unit.attack_sprites
-        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
+        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=100)
         self.damage = 10
         self.price = 32
 
@@ -526,9 +530,15 @@ class Menu:
         self.gold_img = self.load("menu/gold.png")
 
     def unit_click(self):
-        self.first_img = self.load("menu/Skeleton_Warrior.png")
-        self.second_img = self.load("menu/Skeleton_Archer.png")
-        self.third_img = self.load("menu/Skeleton_Spear.png")
+        if self.upgrade_level == 1:
+            self.first_img = self.load("menu/Skeleton_Warrior.png")
+            self.second_img = self.load("menu/Skeleton_Archer.png")
+            self.third_img = self.load("menu/Skeleton_Spear.png")
+        elif self.upgrade_level == 2:
+            self.first_img = self.load("menu/Samurai.png")
+            self.second_img = self.load("menu/Samurai_Archer.png")
+            self.third_img = self.load("menu/Samurai_Commander.png")
+        
         self.forth_img = self.load("menu/Return.png")
 
     def create_unit(self):
