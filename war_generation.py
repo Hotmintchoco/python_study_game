@@ -503,8 +503,9 @@ class Menu:
         }
         self.list_unit_price = list(self.dict_unit_price.keys())
         self.menu_font = pygame.font.SysFont("system", 45)
+        self.menu_point_text = ""
         self.unit_create_gauge = 0
-        self.list_unit_create_gauge = [5, 3, 2]
+        self.list_unit_create_gauge = [7.5, 6, 4]
 
     def load(self, filename):
         s = pygame.image.load(filename).convert_alpha()
@@ -515,7 +516,7 @@ class Menu:
         if self.unit_menu:
             self.menu_text = menu_font.render(f"Unit_Price = {self.unit_price}", 1, (125, 125, 125))
         else:
-            self.menu_text = menu_font.render(f"Price = {self.menu_price}", 1, (125, 125, 125))
+            self.menu_text = menu_font.render(f"{self.menu_point_text} = {self.menu_price}", 1, (125, 125, 125))
 
         if self.is_unit_create_time and self.unit_create_gauge <= Menu.MAX_GAUGE:
             self.unit_create_gauge += self.list_unit_create_gauge[self.menu_index]
@@ -552,12 +553,12 @@ class Menu:
 
     def create_unit(self):
         self.is_unit_create = False
-        self.bool_add_unit = False
         if self.upgrade_level > 1:
             return self.dict_unit_price[self.buy_unit_price](180, 670, self.upgrade_level)
         return self.dict_unit_price[self.buy_unit_price](180, 680, self.upgrade_level)
 
     def buy_unit(self, unit_price):
+        self.bool_add_unit = False
         Gold.now -= unit_price
 
     def draw(self, screen):
@@ -584,22 +585,29 @@ class Menu:
         
         else:
             if self.second_img_rect.collidepoint(pos):
+                self.menu_point_text = "Turret Price"
                 self.menu_price = 200
+                screen.blit(self.menu_text, (350, 75))
+
+            elif self.third_img_rect.collidepoint(pos) and self.turret:
+                self.menu_point_text = "Refund amount"
+                self.menu_price = 100
                 screen.blit(self.menu_text, (350, 75))
             
             elif self.forth_img_rect.collidepoint(pos):
+                self.menu_point_text = "Upgrade Price"
                 self.menu_price = 4000
                 screen.blit(self.menu_text, (350, 75))
 
     def upgrade_click(self):
         self.upgrade_level += 1
         self.dict_unit_price = {
-            150 : Warrior_Unit,
-            200 : Archer_Unit,
+            100 : Warrior_Unit,
+            125 : Archer_Unit,
             500 : Commander_Unit
         }
         self.list_unit_price = list(self.dict_unit_price.keys())
-        self.list_unit_create_gauge = [3, 2, 1]
+        self.list_unit_create_gauge = [5, 4, 2]
         print(f"현재 level = {self.upgrade_level}")
         Warrior_Unit.run_sprites = []
         Warrior_Unit.attack_sprites = []
