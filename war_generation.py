@@ -133,10 +133,16 @@ class Unit(GameObject):
                 self.target = None
     
     def attack_tree(self, tree):
-        if self.rect.colliderect(tree.collide_rect) and self.target.hp <= 0:
-            self.target_tree = True
-            self.vx = 0
-            self.attack_motion(tree)
+        if self.target:
+            if self.rect.colliderect(tree.collide_rect) and self.target.hp <= 0:
+                self.target_tree = True
+                self.vx = 0
+                self.attack_motion(tree)
+        else:
+            if self.rect.colliderect(tree.collide_rect):
+                self.target_tree = True
+                self.vx = 0
+                self.attack_motion(tree)
         
     def unit_hp_draw(self, pos):
         if self.rect.collidepoint(pos):
@@ -264,18 +270,20 @@ class Archer_Unit(Unit):
             return True
         return False
 
-class Skeleton_Spear(Unit):
+class Commander_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
-        if Skeleton_Spear.run_sprites:
-            self.run_sprites = Skeleton_Spear.run_sprites
-
-        if Skeleton_Spear.attack_sprites:
-            self.attack_sprites = Skeleton_Spear.attack_sprites
-        super().__init__(x, y, img_file)
-        self.damage = 25
+    def __init__(self, x, y, unit_level=1):
+        if unit_level == 1:
+            img_file="Unit/Skeleton_Spearman/Skeleton"
+            self.damage = 25
+            unit_hp = 150
+        elif unit_level == 2:
+            img_file = "Unit/Samurai_Commander/Samurai"
+            self.damage = 50
+            unit_hp = 300
+        super().__init__(x, y, img_file, level=unit_level, hp=unit_hp)
 
 class Enemy_Warrior_Unit(Unit):
     run_sprites = []
@@ -359,16 +367,16 @@ class Enemy_Archer_Unit(Unit):
             return True
         return False
 
-class Enemy_Skeleton_Spear(Unit):
+class Enemy_Commander_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
     def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
-        if Enemy_Skeleton_Spear.run_sprites:
-            self.run_sprites = Enemy_Skeleton_Spear.run_sprites
+        if Enemy_Commander_Unit.run_sprites:
+            self.run_sprites = Enemy_Commander_Unit.run_sprites
 
-        if Enemy_Skeleton_Spear.attack_sprites:
-            self.attack_sprites = Enemy_Skeleton_Spear.attack_sprites
+        if Enemy_Commander_Unit.attack_sprites:
+            self.attack_sprites = Enemy_Commander_Unit.attack_sprites
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
         self.damage = 25
         self.price = 175
@@ -483,7 +491,7 @@ class Menu:
         self.dict_unit_price = {
             25 : Warrior_Unit,
             50 : Archer_Unit,
-            150 : Skeleton_Spear
+            150 : Commander_Unit
         }
         self.list_unit_price = list(self.dict_unit_price.keys())
         self.menu_font = pygame.font.SysFont("system", 45)
@@ -573,6 +581,8 @@ class Menu:
         Archer_Unit.run_sprites = []
         Archer_Unit.attack_sprites = []
         Archer_Unit.shot_sprites = []
+        Commander_Unit.run_sprites = []
+        Commander_Unit.attack_sprites = []
 
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
@@ -773,7 +783,7 @@ while True:
             else:
                 if enemy_rand > game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Skeleton_Spear(1150, 680)
+                    enemy_unit = Enemy_Commander_Unit(1150, 680)
                     enemy_units.add(enemy_unit)
                 elif game_difficult >= enemy_rand > max_rand - game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
