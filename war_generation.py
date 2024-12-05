@@ -590,7 +590,7 @@ class Menu:
                 screen.blit(self.menu_text, (350, 75))
 
             elif self.third_img_rect.collidepoint(pos) and self.turret:
-                self.menu_point_text = "Refund amount"
+                self.menu_point_text = "Refund turret"
                 self.menu_price = 100
                 screen.blit(self.menu_text, (350, 75))
             
@@ -644,6 +644,10 @@ class Menu:
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.buy_unit_price)
+            elif self.turret:
+                turrets.remove(self.turret)
+                self.turret = None
+                Gold.now += self.menu_price
 
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
