@@ -417,17 +417,30 @@ class Enemy_Commander_Unit(Unit):
         self.price = 175
 
 class Turret(GameObject):
-    def __init__(self, x, y, flipped=False):
+    def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
         self.flipped = flipped
         self.is_shot = False
         self.target = None
+        self.img_file = img_file
         self.shot_time = 0
         self.turret_speed = 25 # 낮을수록 빠름
+
+        if level == 1:
+            self.damage = 30
+            self.target_distance = 400
+        elif level == 2:
+            self.damage = 100
+            self.turret_speed = 30
+            self.target_distance = 500
+        elif level == 3:
+            self.damage = 300
+            self.turret_speed = 40
+            self.target_distance = 600
         super().__init__(x, y)
     
     def init_sprites(self):
         self.sprites = []
-        img = pygame.image.load("Turret/Turret1Top.png").convert_alpha()
+        img = pygame.image.load(self.img_file).convert_alpha()
         img = pygame.transform.scale(img, (80, 40))
         if self.flipped:
             img = pygame.transform.flip(img, True, False)
@@ -436,7 +449,7 @@ class Turret(GameObject):
         return self.sprites
     
     def set_target(self, enemy):
-        if menu_bar.turret.x + 400 > enemy.x:
+        if menu_bar.turret.x + self.target_distance > enemy.x:
             if not self.target:
                 self.target = enemy
                 self.shot_time = 0
@@ -448,7 +461,10 @@ class Turret(GameObject):
             else:
                 target_x_distance = self.target.x - self.x
                 target_y_distance = self.target.y - self.y
-                new_shell = Shell(self.x+35, self.y, vx=target_x_distance/self.turret_speed, vy=target_y_distance/self.turret_speed)
+                new_shell = Shell(self.x+35, self.y,
+                    vx=target_x_distance/self.turret_speed,
+                    vy=target_y_distance/self.turret_speed,
+                    damage=self.damage)
                 shells.add(new_shell)
                 self.shot_time = 0
 
@@ -457,8 +473,8 @@ class Turret(GameObject):
 
 class Shell(GameObject):
     source_sprites = []
-    def __init__(self, x, y, vx=10, vy= 4.22):
-        self.damage = 30
+    def __init__(self, x, y, vx=10, vy= 4.22, damage=30):
+        self.damage = damage
         super().__init__(x, y, vx=vx, vy=vy)
     
     def init_sprites(self):
@@ -537,6 +553,7 @@ class Menu:
 
         self.unit_price = 0
         self.menu_price = 200
+        self.turret_price = 0
         self.upgrade_price = 0
         self.dict_unit_price = {
             25 : Warrior_Unit,
@@ -632,12 +649,17 @@ class Menu:
         else:
             if self.second_img_rect.collidepoint(pos):
                 self.menu_point_text = "Turret Price"
-                self.menu_price = 200
+                if self.upgrade_level == 1:
+                    self.menu_price = 200
+                elif self.upgrade_level == 2:
+                    self.menu_price = 1000
+                elif self.upgrade_level == 3:
+                    self.menu_price = 2500
                 screen.blit(self.menu_text, (350, 75))
 
             elif self.third_img_rect.collidepoint(pos) and self.turret:
                 self.menu_point_text = "Refund turret"
-                self.menu_price = 100
+                self.menu_price = int(self.turret_price/2)
                 screen.blit(self.menu_text, (350, 75))
             
             elif self.forth_img_rect.collidepoint(pos):
@@ -694,8 +716,15 @@ class Menu:
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.buy_unit_price)
             elif not self.turret and Gold.now >= self.menu_price:
-                self.turret = Turret(125, 550, flipped=True)
+                if self.upgrade_level == 1:
+                    img = "Turret/Turret1Top.png"
+                elif self.upgrade_level == 2:
+                    img = "Turret/Turret2Top.png"
+                elif self.upgrade_level == 3:
+                    img = "Turret/Turret3Top.png"
+                self.turret = Turret(125, 550, flipped=True, img_file=img, level=self.upgrade_level)
                 turrets.add(self.turret)
+                self.turret_price = self.menu_price
                 Gold.now -= self.menu_price
 
         elif self.third_img_rect.collidepoint(pos):
