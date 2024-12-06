@@ -108,22 +108,11 @@ class Unit(GameObject):
     def attack_motion(self, target):
         self.vx = 0
         self.attack = True
-        if self.level == 1:
-            if 3 < self.sprite_id < 3.1 and not self.is_shot:
-                target.hp -= self.damage
-            elif 3.01 < self.sprite_id < 3.2 and self.is_shot:
-                target.hp -= self.damage
-        elif self.level == 2:
-            if 4.8 < self.sprite_id < 4.9 and not self.is_shot:
-                target.hp -= self.damage
-            elif 4.01 < self.sprite_id < 4.2 and self.is_shot:
-                target.hp -= self.damage
-        elif self.level == 3:
-            if len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and not self.is_shot:
-                print(len(self.sprites))
-                target.hp -= self.damage
-            elif 3.01 < self.sprite_id < 3.2 and self.is_shot:
-                target.hp -= self.damage
+        if len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and not self.is_shot:
+            print(len(self.sprites))
+            target.hp -= self.damage
+        elif len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and self.is_shot:
+            target.hp -= self.damage
 
     def fighting(self, enemy):
         if not self.is_shot and self.rect.colliderect(enemy.rect) and enemy.hp > 0:
@@ -195,15 +184,18 @@ class Warrior_Unit(Unit):
             img_file="Unit/Skeleton_Warrior/Skeleton"
             self.damage = 10
             unit_hp = 100
+            ds = 0.1
         elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
             self.damage = 35
             unit_hp = 200
+            ds = 0.1
         elif unit_level == 3:
             img_file = "Unit/Wizard_Fire vizard/Wizard"
             self.damage = 100
             unit_hp = 500
-        super().__init__(x, y, img_file, level=unit_level, hp=unit_hp)
+            ds = 0.15
+        super().__init__(x, y, img_file, level=unit_level, hp=unit_hp, unit_ds=ds)
 
 class Archer_Unit(Unit):
     run_sprites = []
@@ -319,15 +311,18 @@ class Commander_Unit(Unit):
             img_file="Unit/Skeleton_Spearman/Skeleton"
             self.damage = 25
             unit_hp = 150
+            ds = 0.1
         elif unit_level == 2:
             img_file = "Unit/Samurai_Commander/Samurai"
             self.damage = 50
             unit_hp = 300
+            ds = 0.15
         elif unit_level == 3:
             img_file = "Unit/Wizard_Wanderer Magican/Wizard"
             self.damage = 150
             unit_hp = 750
-        super().__init__(x, y, img_file, level=unit_level, hp=unit_hp)
+            ds = 0.19
+        super().__init__(x, y, img_file, level=unit_level, hp=unit_hp, unit_ds=ds)
 
 class Enemy_Warrior_Unit(Unit):
     run_sprites = []
