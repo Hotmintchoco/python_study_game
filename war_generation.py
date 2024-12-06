@@ -115,11 +115,7 @@ class Unit(GameObject):
             target.hp -= self.damage
 
     def fighting(self, enemy):
-        if not self.is_shot and self.rect.colliderect(enemy.rect) and enemy.hp > 0:
-            self.target_tree = False
-            self.target = enemy
-            self.attack_motion(enemy)
-        elif self.is_shot and self.collide_rect.colliderect(enemy.rect) and enemy.hp > 0:
+        if self.collide_rect.colliderect(enemy.rect) and enemy.hp > 0:
             self.target_tree = False
             self.target = enemy
             self.attack_motion(enemy)
@@ -137,12 +133,12 @@ class Unit(GameObject):
     
     def attack_tree(self, tree):
         if self.target:
-            if self.rect.colliderect(tree.collide_rect) and self.target.hp <= 0:
+            if self.collide_rect.colliderect(tree.collide_rect) and self.target.hp <= 0:
                 self.target_tree = True
                 self.vx = 0
                 self.attack_motion(tree)
         else:
-            if self.rect.colliderect(tree.collide_rect):
+            if self.collide_rect.colliderect(tree.collide_rect):
                 self.target_tree = True
                 self.vx = 0
                 self.attack_motion(tree)
@@ -277,14 +273,14 @@ class Archer_Unit(Unit):
 
     def shot_tree(self, tree, shot_complition):
         if self.target:
-            if not self.rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x and self.target.hp <= 0:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x and self.target.hp <= 0:
                 self.now_shot = True
                 self.target_tree = True
                 self.shot_motion(shot_complition)
             else:
                 self.now_shot = False
         else:
-            if not self.rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x:
                 self.now_shot = True
                 self.target_tree = True
                 self.shot_motion(shot_complition)
@@ -594,6 +590,10 @@ class Menu:
             self.first_img = self.load("menu/Samurai.png")
             self.second_img = self.load("menu/Samurai_Archer.png")
             self.third_img = self.load("menu/Samurai_Commander.png")
+        elif self.upgrade_level == 3:
+            self.first_img = self.load("menu/Wizard_fire.png")
+            self.second_img = self.load("menu/Wizard_light.png")
+            self.third_img = self.load("menu/Wizard_wanderer.png")
         
         self.forth_img = self.load("menu/Return.png")
 
