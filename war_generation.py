@@ -153,7 +153,7 @@ class Unit(GameObject):
         if self.rect.collidepoint(pos):
             pygame.draw.rect(screen, (255, 0, 0), self.hp_bar)
 
-class Dead_Skeleton(GameObject):
+class Dead_Unit(GameObject):
     def __init__(self, unit):
         self.x = unit.x
         self.y = unit.y
@@ -207,15 +207,23 @@ class Archer_Unit(Unit):
             self.damage = 10
             add_collide_rect = 20
             unit_hp = 50
+            unit_ds = 0.19
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
             self.damage = 20
             add_collide_rect = 5
             unit_hp = 100
+            unit_ds = 0.19
+        elif unit_level == 3:
+            self.img_file = "Unit/Wizard_Lightning Mage/Wizard"
+            self.damage = 75
+            add_collide_rect = 10
+            unit_hp = 250
+            unit_ds = 0.1
 
         super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=unit_hp)
         self.shot_sprites = self.shot_motion_sprites()
-        self.ds = 0.19
+        self.ds = unit_ds
         self.collide_rect = pygame.Rect(
             self.x, self.y, 
             self.rect.width + add_collide_rect, 
@@ -251,11 +259,16 @@ class Archer_Unit(Unit):
         if self.level == 1:
             arrow_y = self.y-10
             new_arrow = Arrow(self.x-5, arrow_y)
-        else:
+        elif self.level == 2:
             arrow_y = self.y+5
             new_arrow = Samurai_Arrow(self.x-5, arrow_y)
+        elif self.level == 3:
+            arrow_y = self.y - 20
+            new_arrow = Light_Ball(self.x + 20, arrow_y)
 
-        if 12.01 < self.sprite_id < 12.2 and not shot_complition and self.now_shot:
+        if 12.01 < self.sprite_id < 12.2 and not shot_complition and self.now_shot and self.level < 3:
+            arrows.add(new_arrow)
+        elif 3.9 < self.sprite_id < 4 and not shot_complition and self.now_shot and self.level == 3:
             arrows.add(new_arrow)
 
     def shot_tree(self, tree, shot_complition):
@@ -469,6 +482,18 @@ class Samurai_Arrow(GameObject):
             img = pygame.image.load("Unit/Samurai_Archer/Arrow.png").convert_alpha()
             Samurai_Arrow.source_sprites = [img]
         return Samurai_Arrow.source_sprites
+
+class Light_Ball(GameObject):
+    source_sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, vx=8.0)
+        self.damage = 150
+    def init_sprites(self):
+        if not Arrow.source_sprites:
+            img = pygame.image.load("Unit/Wizard_Lightning Mage/Light_ball.png").convert_alpha()
+            img = pygame.transform.scale(img, (48, 48))
+            Arrow.source_sprites = [img]
+        return Arrow.source_sprites
 
 class Enemy_Arrow(GameObject):
     source_sprites = []
@@ -867,7 +892,7 @@ while True:
             enemy.attack_tree(tree)
             if enemy.hp <= 0 and not enemy.is_dead:
                     enemy.is_dead = True
-                    dead_unit_sprites.add(Dead_Skeleton(enemy))
+                    dead_unit_sprites.add(Dead_Unit(enemy))
 
             if not unit_sprites and not enemy.target_tree:
                 enemy.attack = False
@@ -898,7 +923,7 @@ while True:
             unit.attack_tree(enemy_tree)
             if unit.hp <= 0 and not unit.is_dead:
                     unit.is_dead = True
-                    dead_unit_sprites.add(Dead_Skeleton(unit))
+                    dead_unit_sprites.add(Dead_Unit(unit))
             if not enemy_units and not unit.target_tree:
                 unit.attack = False
             if unit.is_dead:
