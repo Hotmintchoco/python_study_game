@@ -43,6 +43,7 @@ class Unit(GameObject):
         self.shot_complition = False
         self.now_shot = False
         self.collided_unit = False
+        self.is_change_motion = False
         self.is_shot = is_shot
         self.flipped = flipped
         self.hp = hp
@@ -91,11 +92,18 @@ class Unit(GameObject):
         if not self.is_shot:
             if self.attack:
                 self.sprites = self.attack_sprites
+                self.change_motion()
             else:
+                self.is_change_motion = False
                 self.sprites = self.run_sprites
         super().update(bgx)
         self.collide_rect.center = self.rect.center
         self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp // self.hp_divide, 5)
+    
+    def change_motion(self):
+        if not self.is_change_motion:
+            self.is_change_motion = True
+            self.sprite_id = 0
     
     def attack_motion(self, target):
         self.vx = 0
@@ -249,9 +257,12 @@ class Archer_Unit(Unit):
         self.collide_rect.center = self.rect.center
         if self.now_shot:
             self.sprites = self.shot_sprites
+            self.change_motion()
         elif self.attack:
             self.sprites = self.attack_sprites
+            self.change_motion()
         else:
+            self.is_change_motion = False
             self.sprites = self.run_sprites
         
     def shot_motion(self, shot_complition):
