@@ -208,23 +208,25 @@ class Archer_Unit(Unit):
             self.damage = 10
             add_collide_rect = 20
             unit_hp = 50
-            unit_ds = 0.19
+            self.shot_distance = 200
+            ds = 0.19
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
             self.damage = 20
             add_collide_rect = 5
             unit_hp = 100
-            unit_ds = 0.19
+            self.shot_distance = 250
+            ds = 0.19
         elif unit_level == 3:
             self.img_file = "Unit/Wizard_Lightning Mage/Wizard"
             self.damage = 75
             add_collide_rect = 10
             unit_hp = 250
-            unit_ds = 0.1
+            self.shot_distance = 250
+            ds = 0.12
 
-        super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=unit_hp)
+        super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
         self.shot_sprites = self.shot_motion_sprites()
-        self.ds = unit_ds
         self.collide_rect = pygame.Rect(
             self.x, self.y, 
             self.rect.width + add_collide_rect, 
@@ -270,21 +272,19 @@ class Archer_Unit(Unit):
             arrow_y = self.y - 20
             new_arrow = Light_Ball(self.x + 20, arrow_y)
 
-        if 12.01 < self.sprite_id < 12.2 and not shot_complition and self.now_shot and self.level < 3:
-            arrows.add(new_arrow)
-        elif 3.9 < self.sprite_id < 4 and not shot_complition and self.now_shot and self.level == 3:
+        if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition and self.now_shot:
             arrows.add(new_arrow)
 
     def shot_tree(self, tree, shot_complition):
         if self.target:
-            if not self.rect.colliderect(tree.collide_rect) and self.x + 225 > tree.x and self.target.hp <= 0:
+            if not self.rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x and self.target.hp <= 0:
                 self.now_shot = True
                 self.target_tree = True
                 self.shot_motion(shot_complition)
             else:
                 self.now_shot = False
         else:
-            if not self.rect.colliderect(tree.collide_rect) and self.x + 225 > tree.x:
+            if not self.rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x:
                 self.now_shot = True
                 self.target_tree = True
                 self.shot_motion(shot_complition)
@@ -294,7 +294,7 @@ class Archer_Unit(Unit):
             self.collided_unit = True
             self.now_shot = False
             self.target = enemy
-        elif self.x + 200 > enemy.x and enemy.hp > 0 and not self.collided_unit:
+        elif self.x + self.shot_distance+25 > enemy.x and enemy.hp > 0 and not self.collided_unit:
             self.now_shot = True
             self.target = enemy
             self.shot_motion(shot_complition)
@@ -383,7 +383,7 @@ class Enemy_Archer_Unit(Unit):
             self.sprites = self.run_sprites
         
     def shot_motion(self, shot_complition):
-        if 12.01 < self.sprite_id < 12.2 and not shot_complition:
+        if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition:
             new_arrow = Enemy_Arrow(self.x+5, self.y-10)
             enemy_arrows.add(new_arrow)
             print(self.sprite_id)
@@ -646,17 +646,28 @@ class Menu:
                     self.menu_price = 4000
                 elif self.upgrade_level == 2:
                     self.menu_price = 15000
+                else:
+                    self.menu_price = 50000
                 screen.blit(self.menu_text, (350, 75))
 
     def upgrade_click(self):
         self.upgrade_level += 1
-        self.dict_unit_price = {
-            100 : Warrior_Unit,
-            125 : Archer_Unit,
-            500 : Commander_Unit
-        }
-        self.list_unit_price = list(self.dict_unit_price.keys())
-        self.list_unit_create_gauge = [5, 4, 2]
+        if self.upgrade_level == 2:
+            self.dict_unit_price = {
+                100 : Warrior_Unit,
+                125 : Archer_Unit,
+                500 : Commander_Unit
+            }
+            self.list_unit_price = list(self.dict_unit_price.keys())
+            self.list_unit_create_gauge = [5.5, 4.5, 3]
+        elif self.upgrade_level == 3:
+            self.dict_unit_price = {
+                250 : Warrior_Unit,
+                500 : Archer_Unit,
+                1500 : Commander_Unit
+            }
+            self.list_unit_price = list(self.dict_unit_price.keys())
+            self.list_unit_create_gauge = [4.5, 3, 2]
         print(f"현재 level = {self.upgrade_level}")
         Warrior_Unit.run_sprites = []
         Warrior_Unit.attack_sprites = []
