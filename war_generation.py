@@ -119,7 +119,8 @@ class Unit(GameObject):
             elif 4.01 < self.sprite_id < 4.2 and self.is_shot:
                 target.hp -= self.damage
         elif self.level == 3:
-            if 3.8 < self.sprite_id < 3.9 and not self.is_shot:
+            if len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and not self.is_shot:
+                print(len(self.sprites))
                 target.hp -= self.damage
             elif 3.01 < self.sprite_id < 3.2 and self.is_shot:
                 target.hp -= self.damage
@@ -322,6 +323,10 @@ class Commander_Unit(Unit):
             img_file = "Unit/Samurai_Commander/Samurai"
             self.damage = 50
             unit_hp = 300
+        elif unit_level == 3:
+            img_file = "Unit/Wizard_Wanderer Magican/Wizard"
+            self.damage = 150
+            unit_hp = 750
         super().__init__(x, y, img_file, level=unit_level, hp=unit_hp)
 
 class Enemy_Warrior_Unit(Unit):
