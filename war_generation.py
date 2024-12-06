@@ -103,12 +103,17 @@ class Unit(GameObject):
         if self.level == 1:
             if 3 < self.sprite_id < 3.1 and not self.is_shot:
                 target.hp -= self.damage
-            elif 3 < self.sprite_id < 3.2 and self.is_shot:
+            elif 3.01 < self.sprite_id < 3.2 and self.is_shot:
                 target.hp -= self.damage
-        else:
+        elif self.level == 2:
             if 4.8 < self.sprite_id < 4.9 and not self.is_shot:
                 target.hp -= self.damage
-            elif 4 < self.sprite_id < 4.2 and self.is_shot:
+            elif 4.01 < self.sprite_id < 4.2 and self.is_shot:
+                target.hp -= self.damage
+        elif self.level == 3:
+            if 3.8 < self.sprite_id < 3.9 and not self.is_shot:
+                target.hp -= self.damage
+            elif 3.01 < self.sprite_id < 3.2 and self.is_shot:
                 target.hp -= self.damage
 
     def fighting(self, enemy):
@@ -185,6 +190,10 @@ class Warrior_Unit(Unit):
             img_file = "Unit/Samurai/Samurai"
             self.damage = 35
             unit_hp = 200
+        elif unit_level == 3:
+            img_file = "Unit/Wizard_Fire vizard/Wizard"
+            self.damage = 100
+            unit_hp = 500
         super().__init__(x, y, img_file, level=unit_level, hp=unit_hp)
 
 class Archer_Unit(Unit):
@@ -483,7 +492,7 @@ class Menu:
         self.unit_menu = False
         self.is_unit_create = False # 유닛이 생성 시간이 다 채워지면 True
         self.is_unit_create_time = False # 유닛 생성 시간 이미지
-        self.bool_add_unit = False
+        self.bool_add_unit = True
         self.upgrade_stand = False
         self.turret = None
         self.upgrade_level = 1
@@ -496,6 +505,7 @@ class Menu:
 
         self.unit_price = 0
         self.menu_price = 200
+        self.upgrade_price = 0
         self.dict_unit_price = {
             25 : Warrior_Unit,
             50 : Archer_Unit,
@@ -530,7 +540,7 @@ class Menu:
         if self.upgrade_stand and self.bool_add_unit:
             self.upgrade_click()
             self.upgrade_stand = False
-        
+      
     # 메인 메뉴의 이미지들
     def main_menu(self):
         self.first_img = self.load("menu/unit.png")
@@ -554,8 +564,8 @@ class Menu:
     def create_unit(self):
         self.is_unit_create = False
         if self.upgrade_level > 1:
-            return self.dict_unit_price[self.buy_unit_price](180, 670, self.upgrade_level)
-        return self.dict_unit_price[self.buy_unit_price](180, 680, self.upgrade_level)
+            return self.dict_unit_price[self.buy_unit_price](150, 670, self.upgrade_level)
+        return self.dict_unit_price[self.buy_unit_price](150, 680, self.upgrade_level)
 
     def buy_unit(self, unit_price):
         self.bool_add_unit = False
@@ -596,7 +606,10 @@ class Menu:
             
             elif self.forth_img_rect.collidepoint(pos):
                 self.menu_point_text = "Upgrade Price"
-                self.menu_price = 4000
+                if self.upgrade_level == 1:
+                    self.menu_price = 4000
+                elif self.upgrade_level == 2:
+                    self.menu_price = 15000
                 screen.blit(self.menu_text, (350, 75))
 
     def upgrade_click(self):
@@ -658,7 +671,7 @@ class Menu:
                 Gold.now -= self.menu_price
 
 class Gold:
-    now = 6000
+    now = 30000
     total_earn = 0
     def __init__(self):
         self.gold_box = pygame.Rect(25, 10, 300, 100)
