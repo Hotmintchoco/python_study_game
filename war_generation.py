@@ -109,7 +109,6 @@ class Unit(GameObject):
         self.vx = 0
         self.attack = True
         if len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and not self.is_shot:
-            print(len(self.sprites))
             target.hp -= self.damage
         elif len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and self.is_shot:
             target.hp -= self.damage
@@ -382,7 +381,7 @@ class Enemy_Archer_Unit(Unit):
         if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition:
             new_arrow = Enemy_Arrow(self.x+5, self.y-10)
             enemy_arrows.add(new_arrow)
-            print(self.sprite_id)
+            print("shot_motion : " ,self.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
         if not self.rect.colliderect(tree.collide_rect):
@@ -416,6 +415,21 @@ class Enemy_Commander_Unit(Unit):
         self.damage = 25
         self.price = 175
 
+class Enemy_Create:
+    def __init__(self):
+        self.create_time = 0
+        self.is_create = False
+
+    def create_delay(self, enemy_unit):
+        if self.create_time < 60 and not self.is_create:
+            self.create_time += 1
+        
+        elif self.create_time >= 60:
+            print("생성완료")
+            self.is_create = True
+            enemy_units.add(enemy_unit)
+            self.create_time = 0
+    
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
         self.flipped = flipped
@@ -863,9 +877,11 @@ while True:
     max_rand = 8
     game_difficult = 0
     bgx = 0  # background x
+    enemy_unit = None
     ground = Ground()
     menu_bar = Menu()
     gold = Gold()
+    enemy_create = Enemy_Create()
     trees = pygame.sprite.Group()
     unit_sprites = pygame.sprite.Group()
     dead_unit_sprites = pygame.sprite.Group()
@@ -894,33 +910,34 @@ while True:
             game_difficult = 3
         elif Gold.total_earn > 2400:
             game_difficult = 5
-        if rand > 0.992 and len(enemy_units) < 5:
-            enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
+        if rand > 0.99 and len(enemy_units) < 5 and not enemy_unit:
+            enemy_rand = round(rand * 1000 - 990) # 0 ~ 10 까지
 
             if game_difficult < 4:
                 if enemy_rand >= game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Warrior_Unit(1150, 680)
-                    enemy_units.add(enemy_unit)
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Archer_Unit(1150, 680)
-                    enemy_units.add(enemy_unit)
             
             else:
                 if enemy_rand > game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Commander_Unit(1150, 680)
-                    enemy_units.add(enemy_unit)
                 elif game_difficult >= enemy_rand > max_rand - game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Archer_Unit(1150, 680)
-                    enemy_units.add(enemy_unit)
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Warrior_Unit(1150, 680)
-                    enemy_units.add(enemy_unit)
-                    
+            
+        if enemy_unit:
+            enemy_create.create_delay(enemy_unit)
+            if enemy_create.is_create:
+                enemy_create.is_create = False
+                enemy_unit = None
+            
         if menu_bar.is_unit_create:
             unit_sprites.add(menu_bar.create_unit())
             menu_bar.bool_add_unit = True
