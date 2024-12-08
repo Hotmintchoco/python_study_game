@@ -108,9 +108,8 @@ class Unit(GameObject):
     def attack_motion(self, target):
         self.vx = 0
         self.attack = True
-        if len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and not self.is_shot:
-            target.hp -= self.damage
-        elif len(self.sprites)-1< self.sprite_id < len(self.sprites)-(1-self.ds) and self.is_shot:
+
+        if len(self.sprites)-1<= self.sprite_id < len(self.sprites)-(1-self.ds):
             target.hp -= self.damage
 
     def fighting(self, enemy):
