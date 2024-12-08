@@ -322,15 +322,26 @@ class Enemy_Warrior_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, img_file="Unit/Skeleton_Warrior/Skeleton"):
-        if Enemy_Warrior_Unit.run_sprites:
-            self.run_sprites = Enemy_Warrior_Unit.run_sprites
-
-        if Enemy_Warrior_Unit.attack_sprites:
-            self.attack_sprites = Enemy_Warrior_Unit.attack_sprites
-        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=100)
-        self.damage = 10
-        self.price = 32
+    def __init__(self, x, y, unit_level=1):
+        if unit_level == 1:
+            img_file="Unit/Skeleton_Warrior/Skeleton"
+            self.damage = 10
+            unit_hp = 100
+            ds = 0.1
+            self.price = 32
+        elif unit_level == 2:
+            img_file = "Unit/Samurai/Samurai"
+            self.damage = 35
+            unit_hp = 200
+            ds = 0.1
+            self.price = 125
+        elif unit_level == 3:
+            img_file = "Unit/Wizard_Fire vizard/Wizard"
+            self.damage = 100
+            unit_hp = 500
+            ds = 0.15
+            self.price = 300
+        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
 class Enemy_Archer_Unit(Unit):
     run_sprites = []
@@ -875,6 +886,9 @@ while True:
     enemy_rand = 0
     max_rand = 8
     game_difficult = 0
+    enemy_level = 1
+    enemy_is_upgrade = False
+    y_subtract = 0     # enemy y좌표 조절
     bgx = 0  # background x
     enemy_unit = None
     ground = Ground()
@@ -905,17 +919,23 @@ while True:
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         rand = random.random()
-        if 1400 > Gold.total_earn >= 1000:
-            game_difficult = 3
-        elif Gold.total_earn > 2400:
-            game_difficult = 5
+        if gold.total_earn > 200 and not enemy_is_upgrade:
+            enemy_is_upgrade = True
+            enemy_level = 2
+
+        if enemy_is_upgrade:
+            y_subtract = 10
+            Enemy_Warrior_Unit.run_sprites = []
+            Enemy_Warrior_Unit.attack_sprites = []
+            enemy_is_upgrade = False
         if rand > 0.99 and len(enemy_units) < 5 and not enemy_unit:
             enemy_rand = round(rand * 1000 - 990) # 0 ~ 10 까지
 
             if game_difficult < 4:
                 if enemy_rand >= game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - y_subtract, enemy_level)
+            """
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Archer_Unit(1150, 680)
@@ -930,7 +950,7 @@ while True:
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Warrior_Unit(1150, 680)
-            
+        """    
         if enemy_unit:
             enemy_create.create_delay(enemy_unit)
             if enemy_create.is_create:
