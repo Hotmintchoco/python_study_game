@@ -264,7 +264,7 @@ class Archer_Unit(Unit):
             new_arrow = Samurai_Arrow(self.x-5, arrow_y)
         elif self.level == 3:
             arrow_y = self.y - 20
-            new_arrow = Light_Ball(self.x + 20, arrow_y)
+            new_arrow = Light_Ball(self.x+20, arrow_y)
 
         if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition and self.now_shot:
             arrows.add(new_arrow)
@@ -284,11 +284,11 @@ class Archer_Unit(Unit):
                 self.shot_motion(shot_complition)
             
     def shot_arrow(self, enemy, shot_complition):
-        if unit.collide_rect.colliderect(enemy.rect):
+        if self.collide_rect.colliderect(enemy.rect):
             self.collided_unit = True
             self.now_shot = False
             self.target = enemy
-        elif self.x + self.shot_distance+25 > enemy.x and enemy.hp > 0 and not self.collided_unit:
+        elif self.x + self.shot_distance > enemy.x and enemy.hp > 0 and not self.collided_unit:
             self.now_shot = True
             self.target = enemy
             self.shot_motion(shot_complition)
@@ -352,16 +352,35 @@ class Enemy_Archer_Unit(Unit):
         if unit_level == 1:
             self.img_file="Unit/Skeleton_Archer/Skeleton"
             self.damage = 10
+            add_collide_rect = 20
+            unit_hp = 50
             self.shot_distance = 200
+            ds = 0.19
+            self.price = 65
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
-            self.damage = 35
+            self.damage = 20
+            add_collide_rect = 5
+            unit_hp = 100
             self.shot_distance = 250
-        
-        super().__init__(x, y, self.img_file, is_shot=True, flipped=True, unit_vx=-1.5)
+            ds = 0.19
+            self.price = 160
+        elif unit_level == 3:
+            self.img_file = "Unit/Wizard_Lightning Mage/Wizard"
+            self.damage = 75
+            add_collide_rect = 10
+            unit_hp = 250
+            self.shot_distance = 250
+            ds = 0.12
+            self.price = 550
+
+        super().__init__(x, y, self.img_file, flipped=True, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
         self.shot_sprites = self.shot_motion_sprites()
-        self.ds = 0.19
-        self.price = 65
+        self.collide_rect = pygame.Rect(
+            self.x, self.y, 
+            self.rect.width + add_collide_rect, 
+            self.rect.height
+        )
     
     def shot_motion_sprites(self):
         if not self.shot_sprites:
@@ -380,34 +399,56 @@ class Enemy_Archer_Unit(Unit):
     
     def update(self, bgx):
         super().update(bgx)
+        self.collide_rect.center = self.rect.center
         if self.now_shot:
             self.sprites = self.shot_sprites
+            self.change_motion()
         elif self.attack:
             self.sprites = self.attack_sprites
+            self.change_motion()
         else:
+            self.is_change_motion = False
             self.sprites = self.run_sprites
         
     def shot_motion(self, shot_complition):
-        if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition:
-            new_arrow = Enemy_Arrow(self.x+5, self.y-10)
+        arrow_y = self.y
+        if self.level == 1:
+            arrow_y = self.y-10
+            new_arrow = Enemy_Arrow(self.x+5, arrow_y)
+        elif self.level == 2:
+            arrow_y = self.y+5
+            new_arrow = Enemy_Samurai_Arrow(self.x+5, arrow_y)
+        elif self.level == 3:
+            arrow_y = self.y - 20
+            new_arrow = Light_Ball(self.x-20, arrow_y, shot_vx=-8.0)
+
+        if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition and self.now_shot:
             enemy_arrows.add(new_arrow)
-            print("shot_motion : " ,self.sprite_id)
 
     def shot_tree(self, tree, shot_complition):
-        if not self.rect.colliderect(tree.collide_rect):
-            if self.flipped and self.x - (self.shot_distance + 25) < tree.x and not self.target:
+        if self.target:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x - (self.shot_distance+25) < tree.x and self.target.hp <= 0:
                 self.now_shot = True
                 self.target_tree = True
                 self.shot_motion(shot_complition)
+            else:
+                self.now_shot = False
         else:
-            self.now_shot = False
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x - (self.shot_distance+25) < tree.x:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition)
 
     def shot_arrow(self, enemy, shot_complition):
-        if not self.rect.colliderect(enemy.rect):
-            if self.flipped and self.x - self.shot_distance < enemy.x and enemy.hp > 0:
-                self.now_shot = True
-                self.target = enemy
-                self.shot_motion(shot_complition)
+        if self.collide_rect.colliderect(enemy.rect):
+            self.collided_unit = True
+            self.now_shot = False
+            self.target = enemy
+        elif self.x - self.shot_distance < enemy.x and enemy.hp > 0 and not self.collided_unit:
+            self.now_shot = True
+            self.target = enemy
+            self.shot_motion(shot_complition)
+
             return True
         return False
 
@@ -448,6 +489,9 @@ class Enemy_Manage:
         self.y_subtract = 10
         Enemy_Warrior_Unit.run_sprites = []
         Enemy_Warrior_Unit.attack_sprites = []
+        Enemy_Archer_Unit.run_sprites = []
+        Enemy_Archer_Unit.attack_sprites = []
+        Enemy_Archer_Unit.shot_sprites = []
 
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
@@ -541,8 +585,8 @@ class Samurai_Arrow(GameObject):
 
 class Light_Ball(GameObject):
     source_sprites = []
-    def __init__(self, x, y):
-        super().__init__(x, y, vx=8.0)
+    def __init__(self, x, y, shot_vx=8.0):
+        super().__init__(x, y, vx=shot_vx)
         self.damage = 150
     def init_sprites(self):
         if not Arrow.source_sprites:
@@ -562,6 +606,18 @@ class Enemy_Arrow(GameObject):
             img = pygame.transform.flip(img, True, False)
             Arrow.source_sprites = [img]
         return Arrow.source_sprites
+
+class Enemy_Samurai_Arrow(GameObject):
+    source_sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, vx=-10.0)
+        self.damage = 50
+    def init_sprites(self):
+        if not Samurai_Arrow.source_sprites:
+            img = pygame.image.load("Unit/Samurai_Archer/Arrow.png").convert_alpha()
+            img = pygame.transform.flip(img, True, False)
+            Samurai_Arrow.source_sprites = [img]
+        return Samurai_Arrow.source_sprites
 
 class Menu:
     MAX_GAUGE = 325
@@ -925,21 +981,22 @@ while True:
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         rand = random.random()
-        if gold.total_earn > 200 and enemy_manage.level == 1:
+        if gold.total_earn > 10 and enemy_manage.level == 1:
             enemy_manage.upgrade()
+            game_difficult = 3
 
-        if rand > 0.99 and len(enemy_units) < 5 and not enemy_unit:
-            enemy_rand = round(rand * 1000 - 990) # 0 ~ 10 까지
+        if rand > 0.992 and len(enemy_units) < 5 and not enemy_unit:
+            enemy_rand = round(rand * 1000 - 992) # 0 ~ 10 까지
 
             if game_difficult < 4:
                 if enemy_rand >= game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
-            """
+            
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Archer_Unit(1150, 680)
-            
+                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+        """    
             else:
                 if enemy_rand > game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
