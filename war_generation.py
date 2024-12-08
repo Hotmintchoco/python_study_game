@@ -456,15 +456,27 @@ class Enemy_Commander_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, img_file="Unit/Skeleton_Spearman/Skeleton"):
-        if Enemy_Commander_Unit.run_sprites:
-            self.run_sprites = Enemy_Commander_Unit.run_sprites
-
-        if Enemy_Commander_Unit.attack_sprites:
-            self.attack_sprites = Enemy_Commander_Unit.attack_sprites
-        super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5)
-        self.damage = 25
-        self.price = 175
+    def __init__(self, x, y, unit_level=1):
+        if unit_level == 1:
+            img_file="Unit/Skeleton_Spearman/Skeleton"
+            self.damage = 25
+            unit_hp = 150
+            ds = 0.1
+            self.price = 175
+        elif unit_level == 2:
+            img_file = "Unit/Samurai_Commander/Samurai"
+            self.damage = 50
+            unit_hp = 300
+            ds = 0.15
+            self.price = 650
+        elif unit_level == 3:
+            img_file = "Unit/Wizard_Wanderer Magican/Wizard"
+            self.damage = 150
+            unit_hp = 750
+            ds = 0.19
+            self.price = 1750
+        super().__init__(x, y, img_file, flipped=True,
+                        unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
 class Enemy_Manage:
     def __init__(self):
@@ -981,33 +993,30 @@ while True:
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         rand = random.random()
-        if gold.total_earn > 10 and enemy_manage.level == 1:
+        if 400 >= gold.total_earn > 100 and enemy_manage.level == 1:
             enemy_manage.upgrade()
             game_difficult = 3
+        elif gold.total_earn > 400:
+            game_difficult = 6
 
         if rand > 0.992 and len(enemy_units) < 5 and not enemy_unit:
             enemy_rand = round(rand * 1000 - 992) # 0 ~ 10 까지
 
             if game_difficult < 4:
+                print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                 if enemy_rand >= game_difficult:
-                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
-            
                 else:
-                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                     enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
-        """    
             else:
+                print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                 if enemy_rand > game_difficult:
-                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Commander_Unit(1150, 680)
-                elif game_difficult >= enemy_rand > max_rand - game_difficult:
-                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Archer_Unit(1150, 680)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+                elif game_difficult >= enemy_rand > 4:
+                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
                 else:
-                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680)
-        """    
+                    enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+
         if enemy_unit:
             enemy_manage.create_delay(enemy_unit)
             if enemy_manage.is_create:
