@@ -425,10 +425,12 @@ class Enemy_Commander_Unit(Unit):
         self.damage = 25
         self.price = 175
 
-class Enemy_Create:
+class Enemy_Manage:
     def __init__(self):
         self.create_time = 0
         self.is_create = False
+        self.level = 1
+        self.y_subtract = 0
 
     def create_delay(self, enemy_unit):
         if self.create_time < 60 and not self.is_create:
@@ -439,7 +441,14 @@ class Enemy_Create:
             self.is_create = True
             enemy_units.add(enemy_unit)
             self.create_time = 0
-    
+
+    def upgrade(self):
+        self.is_upgrade = True
+        self.level += 1
+        self.y_subtract = 10
+        Enemy_Warrior_Unit.run_sprites = []
+        Enemy_Warrior_Unit.attack_sprites = []
+
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
         self.flipped = flipped
@@ -886,15 +895,12 @@ while True:
     enemy_rand = 0
     max_rand = 8
     game_difficult = 0
-    enemy_level = 1
-    enemy_is_upgrade = False
-    y_subtract = 0     # enemy y좌표 조절
     bgx = 0  # background x
     enemy_unit = None
     ground = Ground()
     menu_bar = Menu()
     gold = Gold()
-    enemy_create = Enemy_Create()
+    enemy_manage = Enemy_Manage()
     trees = pygame.sprite.Group()
     unit_sprites = pygame.sprite.Group()
     dead_unit_sprites = pygame.sprite.Group()
@@ -919,22 +925,16 @@ while True:
                 
         # 적 유닛(enemy) 등장 확률 및 양 조절
         rand = random.random()
-        if gold.total_earn > 200 and not enemy_is_upgrade:
-            enemy_is_upgrade = True
-            enemy_level = 2
+        if gold.total_earn > 200 and enemy_manage.level == 1:
+            enemy_manage.upgrade()
 
-        if enemy_is_upgrade:
-            y_subtract = 10
-            Enemy_Warrior_Unit.run_sprites = []
-            Enemy_Warrior_Unit.attack_sprites = []
-            enemy_is_upgrade = False
         if rand > 0.99 and len(enemy_units) < 5 and not enemy_unit:
             enemy_rand = round(rand * 1000 - 990) # 0 ~ 10 까지
 
             if game_difficult < 4:
                 if enemy_rand >= game_difficult:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - y_subtract, enemy_level)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
             """
                 else:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
@@ -952,9 +952,9 @@ while True:
                     enemy_unit = Enemy_Warrior_Unit(1150, 680)
         """    
         if enemy_unit:
-            enemy_create.create_delay(enemy_unit)
-            if enemy_create.is_create:
-                enemy_create.is_create = False
+            enemy_manage.create_delay(enemy_unit)
+            if enemy_manage.is_create:
+                enemy_manage.is_create = False
                 enemy_unit = None
             
         if menu_bar.is_unit_create:
