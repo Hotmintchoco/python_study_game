@@ -504,6 +504,8 @@ class Enemy_Manage:
         Enemy_Archer_Unit.run_sprites = []
         Enemy_Archer_Unit.attack_sprites = []
         Enemy_Archer_Unit.shot_sprites = []
+        Enemy_Commander_Unit.run_sprites = []
+        Enemy_Commander_Unit.attack_sprites = []
 
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
@@ -996,11 +998,18 @@ while True:
         if 400 >= gold.total_earn > 100 and enemy_manage.level == 1:
             enemy_manage.upgrade()
             game_difficult = 3
-        elif gold.total_earn > 400:
+        elif 600 > gold.total_earn > 400:
+            game_difficult = 6
+        
+        elif 800 >= gold.total_earn >= 600 and enemy_manage.level == 2:
+            enemy_manage.upgrade()
+            game_difficult = 0
+        
+        elif gold.total_earn > 800:
             game_difficult = 6
 
-        if rand > 0.992 and len(enemy_units) < 5 and not enemy_unit:
-            enemy_rand = round(rand * 1000 - 992) # 0 ~ 10 까지
+        if rand > 0.992 and len(enemy_units) < 6 and not enemy_unit:
+            enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
 
             if game_difficult < 4:
                 print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
