@@ -933,6 +933,13 @@ class Game_Ready:
     def __init__(self):
         self.button = pygame.Rect(500, 500, 350, 75)
 
+    def game_stop(self, text, x_location):
+        mixer.music.stop()
+        clear_text = titlefont.render(text, 1, (0, 0, 0))
+        screen.blit(clear_text, (x_location, 300))
+        pygame.display.flip()
+        pygame.time.wait(5000)
+
     def draw(self, screen):
         screen_width, screen_height = screen.get_size()
         self.button.center = (screen_width / 2, screen_height / 2 + 100)
@@ -1221,19 +1228,11 @@ while True:
         enemy_tree.tree_hp_draw()
         # 게임 종료
         if enemy_tree.hp <= 0: # 클리어
-            mixer.music.stop()
-            clear_text = titlefont.render("Cleared!", 1, (0, 0, 0))
-            screen.blit(clear_text, (250, 300))
-            pygame.display.flip()
-            pygame.time.wait(7000)
+            start.game_stop("Cleared!", 250)
             running = False
             quit = True
         elif tree.hp <= 0:
-            mixer.music.stop()
-            clear_text = titlefont.render("Game Over!", 1, (0, 0, 0))
-            screen.blit(clear_text, (100, 300))
-            pygame.display.flip()
-            pygame.time.wait(7000)
+            start.game_stop("Game Over!", 100)
             running = False
             quit = True
         pygame.display.flip()
