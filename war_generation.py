@@ -1,4 +1,5 @@
 import pygame
+from pygame.locals import *
 import random
 from pygame import mixer
 
@@ -928,6 +929,16 @@ class Tree(GameObject):
     def tree_hp_draw(self):
         pygame.draw.rect(screen, (225, 94, 0), self.hp_bar)
 
+class Game_Ready:
+    def __init__(self):
+        self.button = pygame.Rect(500, 500, 350, 75)
+
+    def draw(self, screen):
+        screen_width, screen_height = screen.get_size()
+        self.button.center = (screen_width / 2, screen_height / 2 + 100)
+        pygame.draw.rect(screen, (71, 200, 62), self.button)
+        
+
 # 이벤트 발생이후 실행사항 / 유닛 이동속도 처리
 def handle_timer_events():
     for unit in unit_sprites:
@@ -970,16 +981,53 @@ background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
 clock = pygame.time.Clock()
 tree = Tree(50, 575)
 enemy_tree = Tree(screen.get_width() + 225, 575, flipped=True)
+titlefont = pygame.font.SysFont("system", 200)
+scorefont = pygame.font.SysFont("system", 48)
+point = pygame.mouse.get_pos()
+lmousedown = pygame.mouse.get_pressed()[0]
 quit = False
 
 while True:
-    running = True
+    bgx = 0  # background x
+    ground = Ground()
+    start = Game_Ready()
+    # 시작 메뉴
+    title_text = titlefont.render("Age of war!", 1, (0, 0, 0))
+    comment_text = scorefont.render(
+        "Press to play button",
+        1,
+        (255, 255, 255),
+    )
+    show_title = True
+    while show_title:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                show_title = False
+                quit = True
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if start.button.collidepoint(event.pos):
+                    show_title = False
+                    running = True
+        screen.blit(background, (bgx, 0))
+        ground.draw(screen, bgx)
+        start.draw(screen)
+        screen_width, screen_height = screen.get_size()
+        screen.blit(
+            title_text,
+            title_text.get_rect(center=(screen_width / 2, screen_height / 2 - 50)),
+        )
+        screen.blit(
+            comment_text, 
+            comment_text.get_rect(center=(screen_width / 2, screen_height / 2 + 100)),
+        )
+        pygame.display.flip()
+        clock.tick(30)
+
+    """ 게임 """    
     enemy_rand = 0
     max_rand = 8
     game_difficult = 0
-    bgx = 0  # background x
     enemy_unit = None
-    ground = Ground()
     menu_bar = Menu()
     gold = Gold()
     enemy_manage = Enemy_Manage()
@@ -1051,8 +1099,6 @@ while True:
         if menu_bar.turret:
             menu_bar.turret.shot_turret()
         """업데이트"""
-        point = pygame.mouse.get_pos()
-        lmousedown = pygame.mouse.get_pressed()[0]
         menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
 
         if point[0] > 1000 and bgx < 249:
