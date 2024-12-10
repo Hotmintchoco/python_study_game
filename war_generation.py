@@ -829,7 +829,7 @@ class Menu:
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.buy_unit_price)
-            elif not self.turret and Gold.now >= self.menu_price:
+            elif not self.turret and not self.unit_menu and Gold.now >= self.menu_price:
                 if self.upgrade_level == 1:
                     img = "Turret/Turret1Top.png"
                 elif self.upgrade_level == 2:
@@ -983,8 +983,6 @@ tree = Tree(50, 575)
 enemy_tree = Tree(screen.get_width() + 225, 575, flipped=True)
 titlefont = pygame.font.SysFont("system", 200)
 scorefont = pygame.font.SysFont("system", 48)
-point = pygame.mouse.get_pos()
-lmousedown = pygame.mouse.get_pressed()[0]
 quit = False
 
 while True:
@@ -1099,6 +1097,8 @@ while True:
         if menu_bar.turret:
             menu_bar.turret.shot_turret()
         """업데이트"""
+        point = pygame.mouse.get_pos()
+        lmousedown = pygame.mouse.get_pressed()[0]
         menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
 
         if point[0] > 1000 and bgx < 249:
@@ -1219,7 +1219,23 @@ while True:
         shells.draw(screen)
         tree.tree_hp_draw()
         enemy_tree.tree_hp_draw()
-
+        # 게임 종료
+        if enemy_tree.hp <= 0: # 클리어
+            mixer.music.stop()
+            clear_text = titlefont.render("Cleared!", 1, (0, 0, 0))
+            screen.blit(clear_text, (250, 300))
+            pygame.display.flip()
+            pygame.time.wait(7000)
+            running = False
+            quit = True
+        elif tree.hp <= 0:
+            mixer.music.stop()
+            clear_text = titlefont.render("Game Over!", 1, (0, 0, 0))
+            screen.blit(clear_text, (100, 300))
+            pygame.display.flip()
+            pygame.time.wait(7000)
+            running = False
+            quit = True
         pygame.display.flip()
         clock.tick(40)
     if quit:
