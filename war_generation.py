@@ -499,6 +499,12 @@ class Enemy_Manage:
         self.is_upgrade = True
         self.level += 1
         self.y_subtract = 10
+        if self.level == 2:
+            enemy_tree.hp += 1000
+            enemy_tree.max_hp += 1000
+        elif self.level == 3:
+            enemy_tree.hp += 3500
+            enemy_tree.max_hp += 3500
         Enemy_Warrior_Unit.run_sprites = []
         Enemy_Warrior_Unit.attack_sprites = []
         Enemy_Archer_Unit.run_sprites = []
@@ -783,6 +789,8 @@ class Menu:
                 125 : Archer_Unit,
                 500 : Commander_Unit
             }
+            tree.hp += 1000
+            tree.max_hp += 1000
             self.list_unit_price = list(self.dict_unit_price.keys())
             self.list_unit_create_gauge = [5.5, 4.5, 3]
         elif self.upgrade_level == 3:
@@ -791,6 +799,8 @@ class Menu:
                 500 : Archer_Unit,
                 1500 : Commander_Unit
             }
+            tree.hp += 3500
+            tree.max_hp += 3500
             self.list_unit_price = list(self.dict_unit_price.keys())
             self.list_unit_create_gauge = [4.5, 3, 2]
         print(f"현재 level = {self.upgrade_level}")
@@ -893,6 +903,7 @@ class Tree(GameObject):
             self.rect.height
         )
         self.hp = 5000
+        self.max_hp = self.hp
         self.hp_divide = self.hp / 450
     
     def init_sprites(self):
@@ -907,6 +918,7 @@ class Tree(GameObject):
     def update(self, bgx):
         super().update(bgx)
         self.collide_rect.center = self.rect.center
+        self.hp_divide = self.max_hp / 450
         hp_height = self.hp // self.hp_divide
         if self.flipped:
             self.hp_bar = pygame.Rect(self.x - (bgx - 5), 200 + (450 - hp_height), 15, hp_height)
