@@ -496,6 +496,15 @@ class Enemy_Manage:
             enemy_units.add(enemy_unit)
             self.create_time = 0
 
+    def enemy_sprites_reset(self):
+        Enemy_Warrior_Unit.run_sprites = []
+        Enemy_Warrior_Unit.attack_sprites = []
+        Enemy_Archer_Unit.run_sprites = []
+        Enemy_Archer_Unit.attack_sprites = []
+        Enemy_Archer_Unit.shot_sprites = []
+        Enemy_Commander_Unit.run_sprites = []
+        Enemy_Commander_Unit.attack_sprites = []
+
     def upgrade(self):
         self.is_upgrade = True
         self.level += 1
@@ -506,14 +515,8 @@ class Enemy_Manage:
         elif self.level == 3:
             enemy_tree.hp += 3500
             enemy_tree.max_hp += 3500
-        Enemy_Warrior_Unit.run_sprites = []
-        Enemy_Warrior_Unit.attack_sprites = []
-        Enemy_Archer_Unit.run_sprites = []
-        Enemy_Archer_Unit.attack_sprites = []
-        Enemy_Archer_Unit.shot_sprites = []
-        Enemy_Commander_Unit.run_sprites = []
-        Enemy_Commander_Unit.attack_sprites = []
-
+        self.enemy_sprites_reset()
+        
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
         self.flipped = flipped
@@ -732,7 +735,7 @@ class Menu:
 
     def buy_unit(self, unit_price):
         self.bool_add_unit = False
-        Gold.now -= unit_price
+        gold.now -= unit_price
 
     def draw(self, screen):
         pygame.draw.rect(screen, (255, 220, 115), self.menu)
@@ -782,6 +785,15 @@ class Menu:
                     self.menu_price = 50000
                 screen.blit(self.menu_text, (350, 75))
 
+    def unit_sprites_reset(self):
+        Warrior_Unit.run_sprites = []
+        Warrior_Unit.attack_sprites = []
+        Archer_Unit.run_sprites = []
+        Archer_Unit.attack_sprites = []
+        Archer_Unit.shot_sprites = []
+        Commander_Unit.run_sprites = []
+        Commander_Unit.attack_sprites = []
+
     def upgrade_click(self):
         self.upgrade_level += 1
         if self.upgrade_level == 2:
@@ -805,17 +817,11 @@ class Menu:
             self.list_unit_price = list(self.dict_unit_price.keys())
             self.list_unit_create_gauge = [4.5, 3, 2]
         print(f"현재 level = {self.upgrade_level}")
-        Warrior_Unit.run_sprites = []
-        Warrior_Unit.attack_sprites = []
-        Archer_Unit.run_sprites = []
-        Archer_Unit.attack_sprites = []
-        Archer_Unit.shot_sprites = []
-        Commander_Unit.run_sprites = []
-        Commander_Unit.attack_sprites = []
-
+        self.unit_sprites_reset()
+        
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
+            if self.unit_menu and gold.now >= self.unit_price and not self.is_unit_create_time:
                 self.menu_index = 0
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
@@ -824,12 +830,12 @@ class Menu:
             self.unit_click()
 
         elif self.second_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
+            if self.unit_menu and gold.now >= self.unit_price and not self.is_unit_create_time:
                 self.menu_index = 1
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
                 self.buy_unit(self.buy_unit_price)
-            elif not self.turret and not self.unit_menu and Gold.now >= self.menu_price:
+            elif not self.turret and not self.unit_menu and gold.now >= self.menu_price:
                 if self.upgrade_level == 1:
                     img = "Turret/Turret1Top.png"
                 elif self.upgrade_level == 2:
@@ -839,10 +845,10 @@ class Menu:
                 self.turret = Turret(125, 550, flipped=True, img_file=img, level=self.upgrade_level)
                 turrets.add(self.turret)
                 self.turret_price = self.menu_price
-                Gold.now -= self.menu_price
+                gold.now -= self.menu_price
 
         elif self.third_img_rect.collidepoint(pos):
-            if self.unit_menu and Gold.now >= self.unit_price and not self.is_unit_create_time:
+            if self.unit_menu and gold.now >= self.unit_price and not self.is_unit_create_time:
                 self.menu_index = 2
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
@@ -850,20 +856,20 @@ class Menu:
             elif self.turret:
                 turrets.remove(self.turret)
                 self.turret = None
-                Gold.now += self.menu_price
+                gold.now += self.menu_price
 
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
                 self.main_menu()
                 self.unit_menu = False
-            elif Gold.now >= self.menu_price:
+            elif gold.now >= self.menu_price:
                 self.upgrade_stand = True
-                Gold.now -= self.menu_price
+                gold.now -= self.menu_price
 
 class Gold:
-    now = 30000
-    total_earn = 0
     def __init__(self):
+        self.now = 30000
+        self.total_earn = 0
         self.gold_box = pygame.Rect(25, 10, 300, 100)
         self.gold_img = self.load("menu/gold.png")
     def load(self, filename):
@@ -871,12 +877,12 @@ class Gold:
         return s
     
     def update(self, get_gold):
-        Gold.now += get_gold
-        Gold.total_earn += get_gold
+        self.now += get_gold
+        self.total_earn += get_gold
 
     def draw(self, font):
         pygame.draw.rect(screen, (134, 229, 127), self.gold_box)
-        gold_text = font.render(str(Gold.now), True, (255, 255, 255)) # menu
+        gold_text = font.render(str(self.now), True, (255, 255, 255)) # menu
         screen.blit(self.gold_img, (50, 30))
         screen.blit(gold_text, (200, 50))
 
@@ -986,8 +992,6 @@ screen = pygame.display.set_mode((1024, 768))  # 윈도우 크기
 menu_font = pygame.font.SysFont("system", 40) # menu 폰트
 background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
 clock = pygame.time.Clock()
-tree = Tree(50, 575)
-enemy_tree = Tree(screen.get_width() + 225, 575, flipped=True)
 titlefont = pygame.font.SysFont("system", 200)
 scorefont = pygame.font.SysFont("system", 48)
 quit = False
@@ -1034,8 +1038,12 @@ while True:
     game_difficult = 0
     enemy_unit = None
     menu_bar = Menu()
-    gold = Gold()
     enemy_manage = Enemy_Manage()
+    menu_bar.unit_sprites_reset()
+    enemy_manage.enemy_sprites_reset()
+    tree = Tree(50, 575)
+    enemy_tree = Tree(screen.get_width() + 225, 575, flipped=True)
+    gold = Gold()
     trees = pygame.sprite.Group()
     unit_sprites = pygame.sprite.Group()
     dead_unit_sprites = pygame.sprite.Group()
@@ -1230,11 +1238,11 @@ while True:
         if enemy_tree.hp <= 0: # 클리어
             start.game_stop("Cleared!", 250)
             running = False
-            quit = True
+            break
         elif tree.hp <= 0:
             start.game_stop("Game Over!", 100)
             running = False
-            quit = True
+            break
         pygame.display.flip()
         clock.tick(40)
     if quit:
