@@ -938,6 +938,11 @@ class Tree(GameObject):
 class Game_Ready:
     def __init__(self):
         self.button = pygame.Rect(500, 500, 350, 75)
+        self.easybutton = pygame.Rect(500, 300, 200, 50)
+        self.normalbutton = pygame.Rect(500, 400, 200, 50)
+        self.hardbutton = pygame.Rect(500, 500, 200, 50)
+        self.menubutton = pygame.Rect(500, 650, 350, 50)
+        self.difficulty = 1
 
     def game_stop(self, text, x_location):
         mixer.music.stop()
@@ -950,6 +955,17 @@ class Game_Ready:
         screen_width, screen_height = screen.get_size()
         self.button.center = (screen_width / 2, screen_height / 2 + 100)
         pygame.draw.rect(screen, (71, 200, 62), self.button)
+
+    def difficulty_draw(self, screen):
+        screen_width= screen.get_width()
+        self.easybutton.center = (screen_width / 2, 300)
+        self.normalbutton.center = (screen_width / 2, 400)
+        self.hardbutton.center = (screen_width / 2, 500)
+        self.menubutton.center = (screen_width / 2, 650)
+        pygame.draw.rect(screen, (71, 200, 62), self.easybutton)
+        pygame.draw.rect(screen, (71, 200, 62), self.normalbutton)
+        pygame.draw.rect(screen, (71, 200, 62), self.hardbutton)
+        pygame.draw.rect(screen, (234, 234, 234), self.menubutton)
         
 
 # 이벤트 발생이후 실행사항 / 유닛 이동속도 처리
@@ -993,20 +1009,15 @@ menu_font = pygame.font.SysFont("system", 40) # menu 폰트
 background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
 clock = pygame.time.Clock()
 titlefont = pygame.font.SysFont("system", 200)
-scorefont = pygame.font.SysFont("system", 48)
+commnetfont = pygame.font.SysFont("system", 48)
 quit = False
 
 while True:
     bgx = 0  # background x
     ground = Ground()
-    start = Game_Ready()
+    in_game = Game_Ready()
+    choose_game_difficulty = False
     # 시작 메뉴
-    title_text = titlefont.render("Age of war!", 1, (0, 0, 0))
-    comment_text = scorefont.render(
-        "Press to play button",
-        1,
-        (255, 255, 255),
-    )
     show_title = True
     while show_title:
         for event in pygame.event.get():
@@ -1014,21 +1025,74 @@ while True:
                 show_title = False
                 quit = True
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if start.button.collidepoint(event.pos):
+                if in_game.button.collidepoint(event.pos):
+                    choose_game_difficulty = True
+                    #show_title = False
+                    #running = True
+                elif in_game.menubutton.collidepoint(event.pos):
+                    choose_game_difficulty = False
+
+                else:
+                    if in_game.easybutton.collidepoint(event.pos):
+                        in_game.difficulty = 1
+                    elif in_game.normalbutton.collidepoint(event.pos):
+                        in_game.difficulty = 2
+                    elif in_game.hardbutton.collidepoint(event.pos):
+                        in_game.difficulty = 3
+                        
                     show_title = False
                     running = True
+
         screen.blit(background, (bgx, 0))
         ground.draw(screen, bgx)
-        start.draw(screen)
         screen_width, screen_height = screen.get_size()
-        screen.blit(
-            title_text,
-            title_text.get_rect(center=(screen_width / 2, screen_height / 2 - 50)),
-        )
-        screen.blit(
-            comment_text, 
-            comment_text.get_rect(center=(screen_width / 2, screen_height / 2 + 100)),
-        )
+
+        if not choose_game_difficulty:
+            title_text = titlefont.render("Age of war!", 1, (0, 0, 0))
+            comment_text = commnetfont.render("Press to play button", 1, (255, 255, 255),)
+            in_game.draw(screen)
+            screen.blit(
+                title_text,
+                title_text.get_rect(center=(screen_width / 2, screen_height / 2 - 50)),
+            )
+            screen.blit(
+                comment_text, 
+                comment_text.get_rect(center=(screen_width / 2, screen_height / 2 + 100)),
+            )
+        else:
+            in_game.difficulty_draw(screen)
+            title_text = titlefont.render("Difficulty:", 1, (0, 0, 0))
+            detail_text = commnetfont.render("choose a difficulty to start the game", 1, (255, 255, 255),)
+            easy_text = commnetfont.render("easy", 1, (255, 255, 255),)
+            normal_text = commnetfont.render("normal", 1, (255, 255, 255),)
+            hard_text = commnetfont.render("hard", 1, (255, 255, 255),)
+            menu_return_text = commnetfont.render("return to the menu", 1, (0, 0, 0))
+
+            screen.blit(
+                title_text,
+                title_text.get_rect(center=(screen_width / 2, 100)),
+            )
+            screen.blit(
+                detail_text, 
+                detail_text.get_rect(center=(screen_width / 2, 200)),
+            )
+            screen.blit(
+                easy_text, 
+                easy_text.get_rect(center=(screen_width / 2, 300)),
+            )
+            screen.blit(
+                normal_text, 
+                normal_text.get_rect(center=(screen_width / 2, 400)),
+            )
+            screen.blit(
+                hard_text, 
+                hard_text.get_rect(center=(screen_width / 2, 500)),
+            )
+            screen.blit(
+                menu_return_text, 
+                menu_return_text.get_rect(center=(screen_width / 2, 650)),
+            )
+
         pygame.display.flip()
         clock.tick(30)
 
@@ -1236,11 +1300,11 @@ while True:
         enemy_tree.tree_hp_draw()
         # 게임 종료
         if enemy_tree.hp <= 0: # 클리어
-            start.game_stop("Cleared!", 250)
+            in_game.game_stop("Cleared!", 250)
             running = False
             break
         elif tree.hp <= 0:
-            start.game_stop("Game Over!", 100)
+            in_game.game_stop("Game Over!", 100)
             running = False
             break
         pygame.display.flip()
