@@ -177,8 +177,8 @@ class Warrior_Unit(Unit):
     def __init__(self, x, y, unit_level=1):
         if unit_level == 1:
             img_file="Unit/Skeleton_Warrior/Skeleton"
-            self.damage = 10
-            unit_hp = 100
+            self.damage = 15
+            unit_hp = 75
             ds = 0.1
         elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
@@ -304,7 +304,7 @@ class Commander_Unit(Unit):
     def __init__(self, x, y, unit_level=1):
         if unit_level == 1:
             img_file="Unit/Skeleton_Spearman/Skeleton"
-            self.damage = 25
+            self.damage = 30
             unit_hp = 150
             ds = 0.1
         elif unit_level == 2:
@@ -323,25 +323,29 @@ class Enemy_Warrior_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, unit_level=1):
+    def __init__(self, x, y, unit_level=1, difficulty = 1):
         if unit_level == 1:
             img_file="Unit/Skeleton_Warrior/Skeleton"
             self.damage = 10
-            unit_hp = 100
+            unit_hp = 45
             ds = 0.1
             self.price = 32
         elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
-            self.damage = 35
-            unit_hp = 200
+            self.damage = 25
+            unit_hp = 150
             ds = 0.1
             self.price = 125
         elif unit_level == 3:
             img_file = "Unit/Wizard_Fire vizard/Wizard"
-            self.damage = 100
-            unit_hp = 500
+            self.damage = 75
+            unit_hp = 350
             ds = 0.15
             self.price = 300
+
+        if difficulty >= 2:
+            self.damage = self.damage * difficulty
+            unit_hp += difficulty * unit_level * 20
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
 class Enemy_Archer_Unit(Unit):
@@ -349,31 +353,36 @@ class Enemy_Archer_Unit(Unit):
     attack_sprites = []
     shot_sprites = []
 
-    def __init__(self, x, y, unit_level=1):
+    def __init__(self, x, y, unit_level=1, difficulty = 1):
         if unit_level == 1:
             self.img_file="Unit/Skeleton_Archer/Skeleton"
-            self.damage = 10
+            self.damage = 5
             add_collide_rect = 20
-            unit_hp = 50
+            unit_hp = 35
             self.shot_distance = 200
             ds = 0.19
             self.price = 65
         elif unit_level == 2:
             self.img_file = "Unit/Samurai_Archer/Samurai"
-            self.damage = 20
+            self.damage = 10
             add_collide_rect = 5
-            unit_hp = 100
+            unit_hp = 70
             self.shot_distance = 250
             ds = 0.19
             self.price = 160
         elif unit_level == 3:
             self.img_file = "Unit/Wizard_Lightning Mage/Wizard"
-            self.damage = 75
+            self.damage = 50
             add_collide_rect = 10
-            unit_hp = 250
+            unit_hp = 200
             self.shot_distance = 250
             ds = 0.12
             self.price = 550
+        
+        self.difficulty = difficulty
+        if difficulty >= 2:
+            self.damage = self.damage * difficulty
+            unit_hp += difficulty * unit_level * 15
 
         super().__init__(x, y, self.img_file, flipped=True, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
         self.shot_sprites = self.shot_motion_sprites()
@@ -415,13 +424,13 @@ class Enemy_Archer_Unit(Unit):
         arrow_y = self.y
         if self.level == 1:
             arrow_y = self.y-10
-            new_arrow = Enemy_Arrow(self.x+5, arrow_y)
+            new_arrow = Enemy_Arrow(self.x+5, arrow_y, self.difficulty)
         elif self.level == 2:
             arrow_y = self.y+5
-            new_arrow = Enemy_Samurai_Arrow(self.x+5, arrow_y)
+            new_arrow = Enemy_Samurai_Arrow(self.x+5, arrow_y, self.difficulty)
         elif self.level == 3:
             arrow_y = self.y - 20
-            new_arrow = Light_Ball(self.x-20, arrow_y, shot_vx=-8.0)
+            new_arrow = Light_Ball(self.x-20, arrow_y, shot_vx=-8.0, difficulty=self.difficulty)
 
         if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition and self.now_shot:
             enemy_arrows.add(new_arrow)
@@ -457,25 +466,29 @@ class Enemy_Commander_Unit(Unit):
     run_sprites = []
     attack_sprites = []
 
-    def __init__(self, x, y, unit_level=1):
+    def __init__(self, x, y, unit_level=1, difficulty = 1):
         if unit_level == 1:
             img_file="Unit/Skeleton_Spearman/Skeleton"
-            self.damage = 25
-            unit_hp = 150
+            self.damage = 20
+            unit_hp = 100
             ds = 0.1
             self.price = 175
         elif unit_level == 2:
             img_file = "Unit/Samurai_Commander/Samurai"
-            self.damage = 50
-            unit_hp = 300
+            self.damage = 40
+            unit_hp = 200
             ds = 0.15
             self.price = 650
         elif unit_level == 3:
             img_file = "Unit/Wizard_Wanderer Magican/Wizard"
-            self.damage = 150
-            unit_hp = 750
+            self.damage = 100
+            unit_hp = 500
             ds = 0.19
             self.price = 1750
+
+        if difficulty >= 2:
+            self.damage = self.damage * difficulty
+            unit_hp += difficulty * unit_level * 20
         super().__init__(x, y, img_file, flipped=True,
                         unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
@@ -487,10 +500,10 @@ class Enemy_Manage:
         self.y_subtract = 0
 
     def create_delay(self, enemy_unit):
-        if self.create_time < 60 and not self.is_create:
+        if self.create_time < 50 + (self.level * 15) and not self.is_create:
             self.create_time += 1
         
-        elif self.create_time >= 60:
+        elif self.create_time >= 50 + (self.level * 15):
             print("생성완료")
             self.is_create = True
             enemy_units.add(enemy_unit)
@@ -609,9 +622,11 @@ class Samurai_Arrow(GameObject):
 
 class Light_Ball(GameObject):
     source_sprites = []
-    def __init__(self, x, y, shot_vx=8.0):
+    def __init__(self, x, y, shot_vx=8.0, difficulty = 1):
         super().__init__(x, y, vx=shot_vx)
         self.damage = 150
+        if difficulty >= 3:
+            self.damage += 50
     def init_sprites(self):
         if not Arrow.source_sprites:
             img = pygame.image.load("Unit/Wizard_Lightning Mage/Light_ball.png").convert_alpha()
@@ -621,9 +636,9 @@ class Light_Ball(GameObject):
 
 class Enemy_Arrow(GameObject):
     source_sprites = []
-    def __init__(self, x, y):
+    def __init__(self, x, y, difficulty = 1):
         super().__init__(x, y, vx=-10.0)
-        self.damage = 25
+        self.damage = 15 * difficulty
     def init_sprites(self):
         if not Arrow.source_sprites:
             img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
@@ -633,9 +648,9 @@ class Enemy_Arrow(GameObject):
 
 class Enemy_Samurai_Arrow(GameObject):
     source_sprites = []
-    def __init__(self, x, y):
+    def __init__(self, x, y, difficulty = 1):
         super().__init__(x, y, vx=-10.0)
-        self.damage = 50
+        self.damage = 30 * difficulty
     def init_sprites(self):
         if not Samurai_Arrow.source_sprites:
             img = pygame.image.load("Unit/Samurai_Archer/Arrow.png").convert_alpha()
@@ -1151,17 +1166,22 @@ while True:
             if game_difficult < 4:
                 print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                 if enemy_rand >= game_difficult:
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract,
+                                enemy_manage.level, in_game.difficulty)
                 else:
-                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                                enemy_manage.level)
             else:
                 print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                 if enemy_rand > game_difficult:
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract,
+                                enemy_manage.level)
                 elif game_difficult >= enemy_rand > 4:
-                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                                enemy_manage.level)
                 else:
-                    enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract, enemy_manage.level)
+                    enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract, 
+                                enemy_manage.level)
 
         if enemy_unit:
             enemy_manage.create_delay(enemy_unit)
