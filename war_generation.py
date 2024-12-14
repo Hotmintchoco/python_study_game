@@ -183,7 +183,7 @@ class Warrior_Unit(Unit):
         elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
             self.damage = 35
-            unit_hp = 200
+            unit_hp = 175
             ds = 0.1
         elif unit_level == 3:
             img_file = "Unit/Wizard_Fire vizard/Wizard"
@@ -327,25 +327,25 @@ class Enemy_Warrior_Unit(Unit):
         if unit_level == 1:
             img_file="Unit/Skeleton_Warrior/Skeleton"
             self.damage = 10
-            unit_hp = 45
+            unit_hp = 50
             ds = 0.1
             self.price = 32
         elif unit_level == 2:
             img_file = "Unit/Samurai/Samurai"
             self.damage = 25
-            unit_hp = 150
+            unit_hp = 125
             ds = 0.1
             self.price = 125
         elif unit_level == 3:
             img_file = "Unit/Wizard_Fire vizard/Wizard"
             self.damage = 75
-            unit_hp = 350
+            unit_hp = 375
             ds = 0.15
             self.price = 300
 
         if difficulty >= 2:
-            self.damage = self.damage * difficulty
-            unit_hp += difficulty * unit_level * 20
+            self.damage += (self.damage * (difficulty - 1))/2
+            unit_hp += (unit_hp * (difficulty - 1))/2
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
 class Enemy_Archer_Unit(Unit):
@@ -382,7 +382,7 @@ class Enemy_Archer_Unit(Unit):
         self.difficulty = difficulty
         if difficulty >= 2:
             self.damage = self.damage * difficulty
-            unit_hp += difficulty * unit_level * 15
+            unit_hp += (unit_hp * (difficulty - 1))/2
 
         super().__init__(x, y, self.img_file, flipped=True, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
         self.shot_sprites = self.shot_motion_sprites()
@@ -475,8 +475,8 @@ class Enemy_Commander_Unit(Unit):
             self.price = 175
         elif unit_level == 2:
             img_file = "Unit/Samurai_Commander/Samurai"
-            self.damage = 40
-            unit_hp = 200
+            self.damage = 35
+            unit_hp = 175
             ds = 0.15
             self.price = 650
         elif unit_level == 3:
@@ -487,8 +487,8 @@ class Enemy_Commander_Unit(Unit):
             self.price = 1750
 
         if difficulty >= 2:
-            self.damage = self.damage * difficulty
-            unit_hp += difficulty * unit_level * 20
+            self.damage += (self.damage * (difficulty - 1))/2
+            unit_hp += (unit_hp * (difficulty - 1))/2
         super().__init__(x, y, img_file, flipped=True,
                         unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
