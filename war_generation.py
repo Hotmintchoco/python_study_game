@@ -628,11 +628,11 @@ class Light_Ball(GameObject):
         if difficulty >= 3:
             self.damage += 50
     def init_sprites(self):
-        if not Arrow.source_sprites:
+        if not Light_Ball.source_sprites:
             img = pygame.image.load("Unit/Wizard_Lightning Mage/Light_ball.png").convert_alpha()
             img = pygame.transform.scale(img, (48, 48))
-            Arrow.source_sprites = [img]
-        return Arrow.source_sprites
+            Light_Ball.source_sprites = [img]
+        return Light_Ball.source_sprites
 
 class Enemy_Arrow(GameObject):
     source_sprites = []
@@ -793,11 +793,11 @@ class Menu:
             elif self.forth_img_rect.collidepoint(pos):
                 self.menu_point_text = "Upgrade Price"
                 if self.upgrade_level == 1:
-                    self.menu_price = 4000
+                    self.menu_price = 2000
                 elif self.upgrade_level == 2:
-                    self.menu_price = 15000
+                    self.menu_price = 6500
                 else:
-                    self.menu_price = 50000
+                    self.menu_price = 20000
                 screen.blit(self.menu_text, (350, 75))
 
     def unit_sprites_reset(self):
@@ -883,7 +883,7 @@ class Menu:
 
 class Gold:
     def __init__(self):
-        self.now = 30000
+        self.now = 250
         self.total_earn = 0
         self.gold_box = pygame.Rect(25, 10, 300, 100)
         self.gold_img = self.load("menu/gold.png")
@@ -1145,21 +1145,34 @@ while True:
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
                 
-        # 적 유닛(enemy) 등장 확률 및 양 조절
-        rand = random.random()
-        if 400 >= gold.total_earn > 100 and enemy_manage.level == 1:
-            enemy_manage.upgrade()
+        # player가 얻은 골드만큼 적군 유닛의 난이도가 상승
+        if 800 >= gold.total_earn > 320:
             game_difficult = 3
-        elif 600 > gold.total_earn > 400:
+        elif  2400 > gold.total_earn > 800:
             game_difficult = 6
         
-        elif 800 >= gold.total_earn >= 600 and enemy_manage.level == 2:
+        elif 3400 >= gold.total_earn >= 2400 and enemy_manage.level == 1:
             enemy_manage.upgrade()
             game_difficult = 0
         
-        elif gold.total_earn > 800:
+        elif 5400 >= gold.total_earn > 3400:
+            game_difficult = 3
+
+        elif 8400 >= gold.total_earn > 5400:
+            game_difficult = 6
+        
+        elif 12000 >= gold.total_earn > 8400 and enemy_manage.level == 2:
+            enemy_manage.upgrade()
+            game_difficult = 0
+        
+        elif 17000 >= gold.total_earn > 12000:
+            game_difficult = 3
+        
+        elif 24000 >= gold.total_earn > 17000:
             game_difficult = 6
 
+        # 적 유닛(enemy) 등장 확률 및 양 조절
+        rand = random.random()
         if rand > 0.992 and len(enemy_units) < 6 and not enemy_unit:
             enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
 
@@ -1174,13 +1187,13 @@ while True:
             else:
                 print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
                 if enemy_rand > game_difficult:
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract,
+                    enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract,
                                 enemy_manage.level)
-                elif game_difficult >= enemy_rand > 4:
+                elif game_difficult >= enemy_rand > 3:
                     enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
                                 enemy_manage.level)
                 else:
-                    enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract, 
+                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
                                 enemy_manage.level)
 
         if enemy_unit:
