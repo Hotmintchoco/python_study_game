@@ -576,7 +576,7 @@ class Enemy_Manage:
         elif self.level == 3:
             enemy_tree.hp += 3500
             enemy_tree.max_hp += 3500
-        elif self.level == 3:
+        elif self.level == 4:
             enemy_tree.hp += 7000
             enemy_tree.max_hp += 7000
         self.enemy_sprites_reset()
