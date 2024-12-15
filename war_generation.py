@@ -198,7 +198,48 @@ class Warrior_Unit(Unit):
         
         super().__init__(x, y, img_file, level=unit_level, hp=unit_hp, unit_ds=ds)
 
-class Archer_Unit(Unit):
+class Archer(Unit):
+    def __init__(self, x, y, img_file, unit_level, hp, unit_ds, add_collide_rect=0,
+                 flipped=False):
+        super().__init__(x, y, img_file, flipped=flipped, level=unit_level,
+                    is_shot=True, hp=hp,unit_ds=unit_ds)
+        self.shot_sprites = self.shot_motion_sprites()
+        self.collide_rect = pygame.Rect(
+            self.x, self.y, 
+            self.rect.width + add_collide_rect, 
+            self.rect.height
+        )
+
+    def shot_motion_sprites(self):
+        if not self.shot_sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"{self.img_file}_Shot({index}).png"
+                    ).convert_alpha()
+                    if self.flipped:
+                        img = pygame.transform.flip(img, True, False)
+                    self.shot_sprites.append(img)
+                except:
+                    break
+        return self.shot_sprites
+
+    def update(self, bgx):
+        super().update(bgx)
+        self.collide_rect.center = self.rect.center
+        if self.now_shot:
+            self.sprites = self.shot_sprites
+            self.change_motion()
+        elif self.attack:
+            self.sprites = self.attack_sprites
+            self.change_motion()
+        else:
+            self.is_change_motion = False
+            self.sprites = self.run_sprites
+
+class Archer_Unit(Archer):
     run_sprites = []
     attack_sprites = []
     shot_sprites = []
@@ -233,41 +274,9 @@ class Archer_Unit(Unit):
             self.shot_distance = 350
             ds = 0.12
 
-        super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
-        self.shot_sprites = self.shot_motion_sprites()
-        self.collide_rect = pygame.Rect(
-            self.x, self.y, 
-            self.rect.width + add_collide_rect, 
-            self.rect.height
-        )
-    
-    def shot_motion_sprites(self):
-        if not self.shot_sprites:
-            index = 0
-            while True:
-                try:
-                    index += 1
-                    img = pygame.image.load(
-                        f"{self.img_file}_Shot({index}).png"
-                    ).convert_alpha()
-                    self.shot_sprites.append(img)
-                except:
-                    break
-        return self.shot_sprites
+        super().__init__(x, y, self.img_file, unit_level=unit_level,
+                        hp=unit_hp,unit_ds=ds, add_collide_rect = add_collide_rect)
 
-    def update(self, bgx):
-        super().update(bgx)
-        self.collide_rect.center = self.rect.center
-        if self.now_shot:
-            self.sprites = self.shot_sprites
-            self.change_motion()
-        elif self.attack:
-            self.sprites = self.attack_sprites
-            self.change_motion()
-        else:
-            self.is_change_motion = False
-            self.sprites = self.run_sprites
-        
     def shot_motion(self, shot_complition):
         arrow_y = self.y
         if self.level == 1:
@@ -335,6 +344,57 @@ class Commander_Unit(Unit):
             ds = 0.19
         super().__init__(x, y, img_file, level=unit_level, hp=unit_hp, unit_ds=ds)
 
+class Commander_Raider_Unit(Archer):
+    run_sprites = []
+    attack_sprites = []
+    shot_sprites = []
+
+    def __init__(self, x, y, unit_level=1):
+        img_file = "Unit/Raider_3/Raider"
+        self.damage = 750
+        self.shot_damage = 1250
+        unit_hp = 3750
+        self.shot_distance = 150
+        ds = 0.19
+
+        super().__init__(x, y, img_file, unit_level=unit_level,
+                        hp=unit_hp,unit_ds=ds)
+        
+    def shot_motion(self, shot_complition, target):
+        arrow_y = self.y
+        shot_effect = Shot_Effect(self.x+75, arrow_y)
+
+        if 4 < self.sprite_id < 4+self.ds and not shot_complition and self.now_shot:
+            shots.add(shot_effect)
+            target.hp -= self.shot_damage
+
+    def shot_tree(self, tree, shot_complition):
+        if self.target:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x and self.target.hp <= 0:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition, tree)
+            else:
+                self.now_shot = False
+        else:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x + self.shot_distance+25 > tree.x:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition, tree)
+            
+    def shot_arrow(self, enemy, shot_complition):
+        if self.collide_rect.colliderect(enemy.rect):
+            self.collided_unit = True
+            self.now_shot = False
+            self.target = enemy
+        elif self.x + self.shot_distance > enemy.x and enemy.hp > 0 and not self.collided_unit:
+            self.now_shot = True
+            self.target = enemy
+            self.shot_motion(shot_complition, enemy)
+
+            return True
+        return False
+            
 class Enemy_Warrior_Unit(Unit):
     run_sprites = []
     attack_sprites = []
@@ -369,7 +429,7 @@ class Enemy_Warrior_Unit(Unit):
             unit_hp += (unit_hp * (difficulty - 1))/2
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
-class Enemy_Archer_Unit(Unit):
+class Enemy_Archer_Unit(Archer):
     run_sprites = []
     attack_sprites = []
     shot_sprites = []
@@ -405,41 +465,8 @@ class Enemy_Archer_Unit(Unit):
             self.damage = self.damage * difficulty
             unit_hp += (unit_hp * (difficulty - 1))/2
 
-        super().__init__(x, y, self.img_file, flipped=True, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
-        self.shot_sprites = self.shot_motion_sprites()
-        self.collide_rect = pygame.Rect(
-            self.x, self.y, 
-            self.rect.width + add_collide_rect, 
-            self.rect.height
-        )
-    
-    def shot_motion_sprites(self):
-        if not self.shot_sprites:
-            index = 0
-            while True:
-                try:
-                    index += 1
-                    img = pygame.image.load(
-                        f"{self.img_file}_Shot({index}).png"
-                    ).convert_alpha()
-                    img = pygame.transform.flip(img, True, False)
-                    self.shot_sprites.append(img)
-                except:
-                    break
-        return self.shot_sprites
-    
-    def update(self, bgx):
-        super().update(bgx)
-        self.collide_rect.center = self.rect.center
-        if self.now_shot:
-            self.sprites = self.shot_sprites
-            self.change_motion()
-        elif self.attack:
-            self.sprites = self.attack_sprites
-            self.change_motion()
-        else:
-            self.is_change_motion = False
-            self.sprites = self.run_sprites
+        super().__init__(x, y, self.img_file, unit_level=unit_level, hp=unit_hp,
+                         unit_ds=ds, add_collide_rect=add_collide_rect, flipped=True)
         
     def shot_motion(self, shot_complition):
         arrow_y = self.y
@@ -672,6 +699,25 @@ class Bullet(GameObject):
             Bullet.source_sprites = [img]
         return Bullet.source_sprites
 
+class Shot_Effect(GameObject):
+    sprites = []
+    def __init__(self, x, y):
+        super().__init__(x, y, ds=1.9)
+    
+    def init_sprites(self):
+        if not Shot_Effect.sprites:
+            index = 0
+            while True:
+                try:
+                    index += 1
+                    img = pygame.image.load(
+                        f"Unit/Raider_3/Shot_Effect({index}).png"
+                    ).convert_alpha()
+                    Shot_Effect.sprites.append(img)
+                except:
+                    break                
+        return Shot_Effect.sprites
+
 class Enemy_Arrow(GameObject):
     source_sprites = []
     def __init__(self, x, y, difficulty = 1):
@@ -870,7 +916,6 @@ class Menu:
             }
             tree.hp += 1000
             tree.max_hp += 1000
-            self.list_unit_price = list(self.dict_unit_price.keys())
             self.list_unit_create_gauge = [5.5, 4.5, 3]
         elif self.upgrade_level == 3:
             self.dict_unit_price = {
@@ -878,16 +923,20 @@ class Menu:
                 500 : Archer_Unit,
                 1500 : Commander_Unit
             }
+            self.list_unit_create_gauge = [4.5, 3, 2]
+            tree.hp += 3500
+            tree.max_hp += 3500
         elif self.upgrade_level == 4:
             self.dict_unit_price = {
                 750 : Warrior_Unit,
                 1000 : Archer_Unit,
-                10000 : Commander_Unit
+                10000 : Commander_Raider_Unit
             }
             tree.hp += 3500
             tree.max_hp += 3500
-            self.list_unit_price = list(self.dict_unit_price.keys())
-            self.list_unit_create_gauge = [4.5, 3, 2]
+            self.list_unit_create_gauge = [2.5, 2.25, 2]
+
+        self.list_unit_price = list(self.dict_unit_price.keys())
         print(f"현재 level = {self.upgrade_level}")
         self.unit_sprites_reset()
         
@@ -1097,6 +1146,7 @@ while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 show_title = False
+                running = False
                 quit = True
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if choose_game_difficulty:
@@ -1106,14 +1156,12 @@ while True:
                         in_game.difficulty = 2
                     elif in_game.hardbutton.collidepoint(event.pos):
                         in_game.difficulty = 3
-                        
+
                     show_title = False
                     running = True
                     print(f"게임 레벨 : {in_game.difficulty}")
                 if in_game.button.collidepoint(event.pos):
                     choose_game_difficulty = True
-                    #show_title = False
-                    #running = True
                 elif in_game.menubutton.collidepoint(event.pos):
                     choose_game_difficulty = False
                     
@@ -1190,6 +1238,7 @@ while True:
     turrets = pygame.sprite.Group()
     shells = pygame.sprite.Group()
     arrows = pygame.sprite.Group()
+    shots = pygame.sprite.Group()
     enemy_arrows = pygame.sprite.Group()
     trees.add(tree)
     trees.add(enemy_tree)
@@ -1344,6 +1393,11 @@ while True:
             if dead_unit.sprite_id >= len(dead_unit.sprites) - 1:
                 dead_unit_sprites.remove(dead_unit)
 
+        # commander_raider -> shot_effect 완료 후 삭제
+        for shot in shots.copy():
+            if shot.sprite_id >= len(shot.sprites) - 1:
+                shots.remove(shot)
+
         for unit in unit_sprites.copy():
             if unit.is_shot:
                 unit.shot_tree(enemy_tree, unit.shot_complition)
@@ -1365,6 +1419,7 @@ while True:
         enemy_arrows.update(bgx)
         shells.update(bgx)
         dead_unit_sprites.update(bgx)
+        shots.update(bgx)
         trees.update(bgx)
 
         """화면에 그리기"""
@@ -1389,6 +1444,7 @@ while True:
         arrows.draw(screen)
         enemy_arrows.draw(screen)
         shells.draw(screen)
+        shots.draw(screen)
         tree.tree_hp_draw()
         enemy_tree.tree_hp_draw()
         # 게임 종료
