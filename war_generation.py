@@ -561,6 +561,10 @@ class Turret(GameObject):
             self.damage = 300
             self.turret_speed = 40
             self.target_distance = 600
+        elif level == 4:
+            self.damage = 500
+            self.turret_speed = 20
+            self.target_distance = 700
         super().__init__(x, y)
     
     def init_sprites(self):
@@ -809,11 +813,6 @@ class Menu:
             
             elif self.forth_img_rect.collidepoint(pos):
                 self.menu_point_text = "Upgrade Price"
-                if self.upgrade_level < 4:
-                    self.upgrade_text = menu_font.render(f"{self.menu_point_text} = {self.upgrade_price}", 1, (125, 125, 125))
-                else:
-                    self.upgrade_text = menu_font.render(f"{self.menu_point_text}", 1, (125, 125, 125))
-                
                 if self.upgrade_level == 1:
                     self.upgrade_price = 2000
                 elif self.upgrade_level == 2:
@@ -822,6 +821,11 @@ class Menu:
                     self.upgrade_price = 20000
                 else:
                     self.menu_point_text = "Upgrade Max"
+                    
+                if self.upgrade_level < 4:
+                    self.upgrade_text = menu_font.render(f"{self.menu_point_text} = {self.upgrade_price}", 1, (125, 125, 125))
+                else:
+                    self.upgrade_text = menu_font.render(f"{self.menu_point_text}", 1, (125, 125, 125))
                 screen.blit(self.upgrade_text, (350, 75))
 
     def unit_sprites_reset(self):
