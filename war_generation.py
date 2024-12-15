@@ -576,6 +576,9 @@ class Enemy_Manage:
         elif self.level == 3:
             enemy_tree.hp += 3500
             enemy_tree.max_hp += 3500
+        elif self.level == 3:
+            enemy_tree.hp += 7000
+            enemy_tree.max_hp += 7000
         self.enemy_sprites_reset()
         
 class Turret(GameObject):
@@ -932,9 +935,9 @@ class Menu:
                 1000 : Archer_Unit,
                 10000 : Commander_Raider_Unit
             }
-            tree.hp += 3500
-            tree.max_hp += 3500
-            self.list_unit_create_gauge = [2.5, 2.25, 2]
+            tree.hp += 7000
+            tree.max_hp += 7000
+            self.list_unit_create_gauge = [2, 1.5, 0.75]
 
         self.list_unit_price = list(self.dict_unit_price.keys())
         print(f"현재 level = {self.upgrade_level}")
