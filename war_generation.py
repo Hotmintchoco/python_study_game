@@ -225,6 +225,13 @@ class Archer_Unit(Unit):
             unit_hp = 250
             self.shot_distance = 250
             ds = 0.12
+        elif unit_level == 4:
+            self.img_file = "Unit/Raider_2/Raider"
+            self.damage = 100
+            add_collide_rect = 10
+            unit_hp = 500
+            self.shot_distance = 350
+            ds = 0.12
 
         super().__init__(x, y, self.img_file, level=unit_level, is_shot=True, hp=unit_hp,unit_ds=ds)
         self.shot_sprites = self.shot_motion_sprites()
@@ -272,6 +279,9 @@ class Archer_Unit(Unit):
         elif self.level == 3:
             arrow_y = self.y - 20
             new_arrow = Light_Ball(self.x+20, arrow_y)
+        elif self.level == 4:
+            arrow_y = self.y
+            new_arrow = Bullet(self.x+20, arrow_y)
 
         if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition and self.now_shot:
             arrows.add(new_arrow)
@@ -649,6 +659,19 @@ class Light_Ball(GameObject):
             Light_Ball.source_sprites = [img]
         return Light_Ball.source_sprites
 
+class Bullet(GameObject):
+    source_sprites = []
+    def __init__(self, x, y, shot_vx=15.0, difficulty = 1):
+        super().__init__(x, y, vx=shot_vx)
+        self.damage = 250
+        if difficulty >= 3:
+            self.damage += 50
+    def init_sprites(self):
+        if not Bullet.source_sprites:
+            img = pygame.image.load("Unit/Raider_2/bullet.png").convert_alpha()
+            Bullet.source_sprites = [img]
+        return Bullet.source_sprites
+
 class Enemy_Arrow(GameObject):
     source_sprites = []
     def __init__(self, x, y, difficulty = 1):
@@ -821,7 +844,7 @@ class Menu:
                     self.upgrade_price = 20000
                 else:
                     self.menu_point_text = "Upgrade Max"
-                    
+
                 if self.upgrade_level < 4:
                     self.upgrade_text = menu_font.render(f"{self.menu_point_text} = {self.upgrade_price}", 1, (125, 125, 125))
                 else:
@@ -1076,14 +1099,7 @@ while True:
                 show_title = False
                 quit = True
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if in_game.button.collidepoint(event.pos):
-                    choose_game_difficulty = True
-                    #show_title = False
-                    #running = True
-                elif in_game.menubutton.collidepoint(event.pos):
-                    choose_game_difficulty = False
-
-                else:
+                if choose_game_difficulty:
                     if in_game.easybutton.collidepoint(event.pos):
                         in_game.difficulty = 1
                     elif in_game.normalbutton.collidepoint(event.pos):
@@ -1093,6 +1109,14 @@ while True:
                         
                     show_title = False
                     running = True
+                    print(f"게임 레벨 : {in_game.difficulty}")
+                if in_game.button.collidepoint(event.pos):
+                    choose_game_difficulty = True
+                    #show_title = False
+                    #running = True
+                elif in_game.menubutton.collidepoint(event.pos):
+                    choose_game_difficulty = False
+                    
 
         screen.blit(background, (bgx, 0))
         ground.draw(screen, bgx)
