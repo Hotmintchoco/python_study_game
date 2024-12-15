@@ -190,6 +190,12 @@ class Warrior_Unit(Unit):
             self.damage = 100
             unit_hp = 500
             ds = 0.15
+        elif unit_level == 4:
+            img_file = "Unit/Raider_1/Raider"
+            self.damage = 250
+            unit_hp = 1250
+            ds = 0.15
+        
         super().__init__(x, y, img_file, level=unit_level, hp=unit_hp, unit_ds=ds)
 
 class Archer_Unit(Unit):
@@ -342,6 +348,11 @@ class Enemy_Warrior_Unit(Unit):
             unit_hp = 375
             ds = 0.15
             self.price = 300
+        elif unit_level == 4:
+            img_file = "Unit/Raider_1/Raider"
+            self.damage = 166
+            unit_hp = 830
+            ds = 0.15
 
         if difficulty >= 2:
             self.damage += (self.damage * (difficulty - 1))/2
@@ -739,6 +750,10 @@ class Menu:
             self.first_img = self.load("menu/Wizard_fire.png")
             self.second_img = self.load("menu/Wizard_light.png")
             self.third_img = self.load("menu/Wizard_wanderer.png")
+        elif self.upgrade_level == 4:
+            self.first_img = self.load("menu/Raider_1.png")
+            self.second_img = self.load("menu/Raider_2.png")
+            self.third_img = self.load("menu/Raider_3.png")
         
         self.forth_img = self.load("menu/Return.png")
 
@@ -783,6 +798,8 @@ class Menu:
                     self.menu_price = 1000
                 elif self.upgrade_level == 3:
                     self.menu_price = 2500
+                elif self.upgrade_level == 4:
+                    self.menu_price = 10000
                 screen.blit(self.menu_text, (350, 75))
 
             elif self.third_img_rect.collidepoint(pos) and self.turret:
@@ -792,13 +809,20 @@ class Menu:
             
             elif self.forth_img_rect.collidepoint(pos):
                 self.menu_point_text = "Upgrade Price"
-                if self.upgrade_level == 1:
-                    self.menu_price = 2000
-                elif self.upgrade_level == 2:
-                    self.menu_price = 6500
+                if self.upgrade_level < 4:
+                    self.upgrade_text = menu_font.render(f"{self.menu_point_text} = {self.upgrade_price}", 1, (125, 125, 125))
                 else:
-                    self.menu_price = 20000
-                screen.blit(self.menu_text, (350, 75))
+                    self.upgrade_text = menu_font.render(f"{self.menu_point_text}", 1, (125, 125, 125))
+                
+                if self.upgrade_level == 1:
+                    self.upgrade_price = 2000
+                elif self.upgrade_level == 2:
+                    self.upgrade_price = 6500
+                elif self.upgrade_level == 3:
+                    self.upgrade_price = 20000
+                else:
+                    self.menu_point_text = "Upgrade Max"
+                screen.blit(self.upgrade_text, (350, 75))
 
     def unit_sprites_reset(self):
         Warrior_Unit.run_sprites = []
@@ -826,6 +850,12 @@ class Menu:
                 250 : Warrior_Unit,
                 500 : Archer_Unit,
                 1500 : Commander_Unit
+            }
+        elif self.upgrade_level == 4:
+            self.dict_unit_price = {
+                750 : Warrior_Unit,
+                1000 : Archer_Unit,
+                10000 : Commander_Unit
             }
             tree.hp += 3500
             tree.max_hp += 3500
@@ -857,6 +887,8 @@ class Menu:
                     img = "Turret/Turret2Top.png"
                 elif self.upgrade_level == 3:
                     img = "Turret/Turret3Top.png"
+                elif self.upgrade_level == 4:
+                    img = "Turret/Turret4Top.png"
                 self.turret = Turret(125, 550, flipped=True, img_file=img, level=self.upgrade_level)
                 turrets.add(self.turret)
                 self.turret_price = self.menu_price
@@ -877,13 +909,13 @@ class Menu:
             if self.unit_menu:
                 self.main_menu()
                 self.unit_menu = False
-            elif gold.now >= self.menu_price:
+            elif gold.now >= self.upgrade_price and self.upgrade_level < 4:
                 self.upgrade_stand = True
-                gold.now -= self.menu_price
+                gold.now -= self.upgrade_price
 
 class Gold:
     def __init__(self):
-        self.now = 250
+        self.now = 80000
         self.total_earn = 0
         self.gold_box = pygame.Rect(25, 10, 300, 100)
         self.gold_img = self.load("menu/gold.png")
