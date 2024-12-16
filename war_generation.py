@@ -423,6 +423,7 @@ class Enemy_Warrior_Unit(Unit):
             self.damage = 166
             unit_hp = 830
             ds = 0.15
+            self.price = 1000
 
         if difficulty >= 2:
             self.damage += (self.damage * (difficulty - 1))/2
@@ -459,6 +460,14 @@ class Enemy_Archer_Unit(Archer):
             self.shot_distance = 250
             ds = 0.12
             self.price = 550
+        elif unit_level == 4:
+            self.img_file = "Unit/Raider_2/Raider"
+            self.damage = 100
+            add_collide_rect = 10
+            unit_hp = 500
+            self.shot_distance = 350
+            ds = 0.12
+            self.price = 1450
         
         self.difficulty = difficulty
         if difficulty >= 2:
@@ -479,6 +488,10 @@ class Enemy_Archer_Unit(Archer):
         elif self.level == 3:
             arrow_y = self.y - 20
             new_arrow = Light_Ball(self.x-20, arrow_y, shot_vx=-8.0, difficulty=self.difficulty)
+        elif self.level == 4:
+            arrow_y = self.y
+            new_arrow = Bullet(self.x+20, arrow_y, shot_vx=-15.0, difficulty=self.difficulty)
+
 
         if len(self.sprites)-2 < self.sprite_id < len(self.sprites)-(2-self.ds) and not shot_complition and self.now_shot:
             enemy_arrows.add(new_arrow)
@@ -540,11 +553,63 @@ class Enemy_Commander_Unit(Unit):
         super().__init__(x, y, img_file, flipped=True,
                         unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
+class Enemy_Commander_Raider_Unit(Archer):
+    run_sprites = []
+    attack_sprites = []
+    shot_sprites = []
+
+    def __init__(self, x, y, unit_level=1):
+        img_file = "Unit/Raider_3/Raider"
+        self.damage = 600
+        self.shot_damage = 1100
+        unit_hp = 3000
+        self.shot_distance = 150
+        ds = 0.19
+        self.price = 12000
+
+        super().__init__(x, y, img_file, flipped=True, unit_level=unit_level,
+                        hp=unit_hp,unit_ds=ds)
+        
+    def shot_motion(self, shot_complition, target):
+        arrow_y = self.y
+        shot_effect = Shot_Effect(self.x-75, arrow_y, flipped=True)
+
+        if 4 < self.sprite_id < 4+self.ds and not shot_complition and self.now_shot:
+            shots.add(shot_effect)
+            target.hp -= self.shot_damage
+
+    def shot_tree(self, tree, shot_complition):
+        if self.target:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x - (self.shot_distance+25) < tree.x and self.target.hp <= 0:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition, tree)
+            else:
+                self.now_shot = False
+        else:
+            if not self.collide_rect.colliderect(tree.collide_rect) and self.x - (self.shot_distance+25) < tree.x:
+                self.now_shot = True
+                self.target_tree = True
+                self.shot_motion(shot_complition, tree)
+            
+    def shot_arrow(self, enemy, shot_complition):
+        if self.collide_rect.colliderect(enemy.rect):
+            self.collided_unit = True
+            self.now_shot = False
+            self.target = enemy
+        elif self.x - self.shot_distance < enemy.x and enemy.hp > 0 and not self.collided_unit:
+            self.now_shot = True
+            self.target = enemy
+            self.shot_motion(shot_complition, enemy)
+
+            return True
+        return False
+
 class Enemy_Manage:
     def __init__(self):
         self.create_time = 0
         self.is_create = False
-        self.level = 1
+        self.level = 2
         self.y_subtract = 0
 
     def create_delay(self, enemy_unit):
@@ -580,6 +645,7 @@ class Enemy_Manage:
             enemy_tree.hp += 7000
             enemy_tree.max_hp += 7000
         self.enemy_sprites_reset()
+        print("적 유닛 level : ",self.level)
         
 class Turret(GameObject):
     def __init__(self, x, y, flipped=False, img_file="Turret/Turret1Top.png", level=1):
@@ -695,7 +761,7 @@ class Bullet(GameObject):
         super().__init__(x, y, vx=shot_vx)
         self.damage = 250
         if difficulty >= 3:
-            self.damage += 50
+            self.damage += 100
     def init_sprites(self):
         if not Bullet.source_sprites:
             img = pygame.image.load("Unit/Raider_2/bullet.png").convert_alpha()
@@ -703,23 +769,26 @@ class Bullet(GameObject):
         return Bullet.source_sprites
 
 class Shot_Effect(GameObject):
-    sprites = []
-    def __init__(self, x, y):
+    def __init__(self, x, y, flipped=False):
+        self.flipped = flipped
         super().__init__(x, y, ds=1.9)
     
     def init_sprites(self):
-        if not Shot_Effect.sprites:
-            index = 0
+        self.sprites = []
+        index = 0
+        if not self.sprites:
             while True:
                 try:
                     index += 1
                     img = pygame.image.load(
                         f"Unit/Raider_3/Shot_Effect({index}).png"
                     ).convert_alpha()
-                    Shot_Effect.sprites.append(img)
+                    if self.flipped:
+                        img = pygame.transform.flip(img, True, False)
+                    self.sprites.append(img)
                 except:
                     break                
-        return Shot_Effect.sprites
+        return self.sprites
 
 class Enemy_Arrow(GameObject):
     source_sprites = []
@@ -1258,29 +1327,29 @@ while True:
                 handle_timer_events()
                 
         # player가 얻은 골드만큼 적군 유닛의 난이도가 상승
-        if 800 >= gold.total_earn > 320:
+        if 200 >= gold.total_earn > 0:
             game_difficult = 3
-        elif  2400 > gold.total_earn > 800:
+        elif  400 > gold.total_earn > 200:
             game_difficult = 6
         
-        elif 3400 >= gold.total_earn >= 2400 and enemy_manage.level == 1:
+        elif 800 >= gold.total_earn >= 400 and enemy_manage.level == 2:
             enemy_manage.upgrade()
             game_difficult = 0
         
-        elif 5400 >= gold.total_earn > 3400:
+        elif 1200 >= gold.total_earn > 800:
             game_difficult = 3
 
-        elif 8400 >= gold.total_earn > 5400:
+        elif 1600 >= gold.total_earn > 1200:
             game_difficult = 6
         
-        elif 12000 >= gold.total_earn > 8400 and enemy_manage.level == 2:
+        elif 2000 >= gold.total_earn > 1600 and enemy_manage.level == 3:
             enemy_manage.upgrade()
             game_difficult = 0
         
-        elif 17000 >= gold.total_earn > 12000:
+        elif 4000 >= gold.total_earn > 2000:
             game_difficult = 3
         
-        elif 24000 >= gold.total_earn > 17000:
+        elif 14000 >= gold.total_earn > 4000:
             game_difficult = 6
 
         # 적 유닛(enemy) 등장 확률 및 양 조절
@@ -1297,16 +1366,27 @@ while True:
                     enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
                                 enemy_manage.level)
             else:
-                print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                if enemy_rand > game_difficult:
-                    enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract,
-                                enemy_manage.level)
-                elif game_difficult >= enemy_rand > 3:
-                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
-                                enemy_manage.level)
+                if enemy_manage.level <= 3:
+                    print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                    if enemy_rand > game_difficult:
+                        enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract,
+                                    enemy_manage.level)
+                    elif game_difficult >= enemy_rand > 3:
+                        enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                                    enemy_manage.level)
+                    else:
+                        enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
+                                    enemy_manage.level)
                 else:
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
-                                enemy_manage.level)
+                    if enemy_rand > game_difficult:
+                        enemy_unit = Enemy_Commander_Raider_Unit(1150, 680 - enemy_manage.y_subtract,
+                                    enemy_manage.level)
+                    elif game_difficult >= enemy_rand > 3:
+                        enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                                    enemy_manage.level)
+                    else:
+                        enemy_unit = Enemy_Commander_Raider_Unit(1150, 680 - enemy_manage.y_subtract, 
+                                    enemy_manage.level)
 
         if enemy_unit:
             enemy_manage.create_delay(enemy_unit)
