@@ -812,11 +812,11 @@ class Enemy_Arrow(GameObject):
         self.damage = 10
         self.damage += (self.damage * (difficulty - 1))/2
     def init_sprites(self):
-        if not Arrow.source_sprites:
+        if not Enemy_Arrow.source_sprites:
             img = pygame.image.load("Unit/Skeleton_Archer/Arrow.png").convert_alpha()
             img = pygame.transform.flip(img, True, False)
-            Arrow.source_sprites = [img]
-        return Arrow.source_sprites
+            Enemy_Arrow.source_sprites = [img]
+        return Enemy_Arrow.source_sprites
 
 class Enemy_Samurai_Arrow(GameObject):
     source_sprites = []
@@ -825,11 +825,11 @@ class Enemy_Samurai_Arrow(GameObject):
         self.damage = 16.6
         self.damage += (self.damage * (difficulty - 1))/2
     def init_sprites(self):
-        if not Samurai_Arrow.source_sprites:
+        if not Enemy_Samurai_Arrow.source_sprites:
             img = pygame.image.load("Unit/Samurai_Archer/Arrow.png").convert_alpha()
             img = pygame.transform.flip(img, True, False)
-            Samurai_Arrow.source_sprites = [img]
-        return Samurai_Arrow.source_sprites
+            Enemy_Samurai_Arrow.source_sprites = [img]
+        return Enemy_Samurai_Arrow.source_sprites
 
 class Menu:
     MAX_GAUGE = 325
