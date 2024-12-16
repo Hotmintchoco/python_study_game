@@ -1154,7 +1154,7 @@ class Game_Ready:
         self.normalbutton = pygame.Rect(500, 400, 200, 50)
         self.hardbutton = pygame.Rect(500, 500, 200, 50)
         self.menubutton = pygame.Rect(500, 650, 350, 50)
-        self.difficulty = 1
+        self.difficulty = 0
 
     def game_stop(self, text, x_location):
         mixer.music.stop()
@@ -1245,10 +1245,13 @@ while True:
                         in_game.difficulty = 2
                     elif in_game.hardbutton.collidepoint(event.pos):
                         in_game.difficulty = 3
+                    elif in_game.menubutton.collidepoint(event.pos):
+                        choose_game_difficulty = False
 
-                    show_title = False
-                    running = True
-                    print(f"게임 레벨 : {in_game.difficulty}")
+                    if in_game.difficulty >= 1:
+                        show_title = False
+                        running = True
+                        print(f"게임 레벨 : {in_game.difficulty}")
                 if in_game.button.collidepoint(event.pos):
                     choose_game_difficulty = True
                 elif in_game.menubutton.collidepoint(event.pos):
