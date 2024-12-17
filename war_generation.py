@@ -3,6 +3,10 @@ from pygame.locals import *
 import random
 from pygame import mixer
 
+# 색상 설정
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+# 게임 설정  
 GROUND_SPEED = 7.5
 GAME_GOLD = 60000
 ENEMY_LEVEL = 1
@@ -1314,10 +1318,7 @@ while True:
 
         pygame.display.flip()
         clock.tick(30)
-
-    # 색상 설정
-    WHITE = (255, 255, 255)
-    BLACK = (0, 0, 0)       
+     
     """ 게임 """
     paused = False  # 게임 일시정지    
     enemy_rand = 0
@@ -1353,8 +1354,13 @@ while True:
                 menu_bar.handle_click(event.pos)
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    if not paused:
+                        mixer.music.pause()  # 음악 일시정지
+                    else:
+                        mixer.music.play(-1)  # 음악 다시 재생
                     paused = not paused
 
         if not paused:  
@@ -1586,6 +1592,7 @@ while True:
             font = pygame.font.Font(None, 74)
             text = font.render("Paused", True, BLACK)
             screen.blit(text, (screen.get_width()/2-80, 350))
+            mixer.music.stop()
         pygame.display.flip()
         clock.tick(40)
     if quit:
