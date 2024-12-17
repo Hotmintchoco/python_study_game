@@ -858,9 +858,10 @@ class Menu:
         self.unit_create_time_rect = pygame.Rect(350, 15, 10, 35)
 
         self.unit_price = 0
+        self.menu_turret_price = 200
+        self.upgrade_price = 800
         self.menu_price = 200
         self.turret_price = 0
-        self.upgrade_price = 0
         self.dict_unit_price = {
             25 : Warrior_Unit,
             50 : Archer_Unit,
@@ -962,30 +963,17 @@ class Menu:
         else:
             if self.second_img_rect.collidepoint(pos):
                 self.menu_point_text = "Turret Price"
-                if self.upgrade_level == 1:
-                    self.menu_price = 200
-                elif self.upgrade_level == 2:
-                    self.menu_price = 800
-                elif self.upgrade_level == 3:
-                    self.menu_price = 2000
-                elif self.upgrade_level == 4:
-                    self.menu_price = 10000
+                self.menu_price = self.menu_turret_price
                 screen.blit(self.menu_text, (350, 75))
 
             elif self.third_img_rect.collidepoint(pos) and self.turret:
-                self.menu_point_text = "Refund turret"
+                self.menu_point_text = "turret sell"
                 self.menu_price = int(self.turret_price/2)
                 screen.blit(self.menu_text, (350, 75))
             
             elif self.forth_img_rect.collidepoint(pos):
                 self.menu_point_text = "Upgrade Price"
-                if self.upgrade_level == 1:
-                    self.upgrade_price = 800
-                elif self.upgrade_level == 2:
-                    self.upgrade_price = 2000
-                elif self.upgrade_level == 3:
-                    self.upgrade_price = 8000
-                else:
+                if self.upgrade_level >= 4:
                     self.menu_point_text = "Upgrade Max"
 
                 if self.upgrade_level < 4:
@@ -1011,6 +999,8 @@ class Menu:
                 125 : Archer_Unit,
                 500 : Commander_Unit
             }
+            self.menu_turret_price = 800
+            self.upgrade_price = 2000
             tree.hp += 250
             tree.max_hp += 250
             self.list_unit_create_gauge = [5.5, 4.5, 3]
@@ -1020,6 +1010,8 @@ class Menu:
                 500 : Archer_Unit,
                 1500 : Commander_Unit
             }
+            self.menu_turret_price = 2000
+            self.upgrade_price = 8000
             self.list_unit_create_gauge = [4.5, 3, 2]
             tree.hp += 500
             tree.max_hp += 500
@@ -1029,6 +1021,7 @@ class Menu:
                 1000 : Archer_Unit,
                 20000 : Commander_Raider_Unit
             }
+            self.menu_turret_price = 10000
             tree.hp += 2000
             tree.max_hp += 2000
             self.list_unit_create_gauge = [2, 1.5, 0.75]
@@ -1036,55 +1029,94 @@ class Menu:
         self.list_unit_price = list(self.dict_unit_price.keys())
         print(f"현재 level = {self.upgrade_level}")
         self.unit_sprites_reset()
+    
+    def warrior_unit_buy(self):
+        if self.unit_menu and gold.now >= self.list_unit_price[0] and not self.is_unit_create_time:
+            self.menu_index = 0
+            self.is_unit_create_time = True
+            self.buy_unit_price = self.list_unit_price[0]
+            self.buy_unit(self.buy_unit_price, self.first_img)
+    
+    def archer_unit_buy(self):
+        if self.unit_menu and gold.now >= self.list_unit_price[1] and not self.is_unit_create_time:
+            self.menu_index = 1
+            self.is_unit_create_time = True
+            self.buy_unit_price = self.list_unit_price[1]
+            self.buy_unit(self.buy_unit_price, self.second_img)
+    
+    def commander_unit_buy(self):
+        if self.unit_menu and gold.now >= self.list_unit_price[2] and not self.is_unit_create_time:
+            self.menu_index = 2
+            self.is_unit_create_time = True
+            self.buy_unit_price = self.list_unit_price[2]
+            self.buy_unit(self.buy_unit_price, self.third_img)
+
+    def turret_buy(self):
+        if not self.turret and not self.unit_menu and gold.now >= self.menu_turret_price:
+            if self.upgrade_level == 1:
+                img = "Turret/Turret1Top.png"
+            elif self.upgrade_level == 2:
+                img = "Turret/Turret2Top.png"
+            elif self.upgrade_level == 3:
+                img = "Turret/Turret3Top.png"
+            elif self.upgrade_level == 4:
+                img = "Turret/Turret4Top.png"
+            self.turret = Turret(125, 550, flipped=True, img_file=img, level=self.upgrade_level)
+            turrets.add(self.turret)
+            self.turret_price = self.menu_turret_price
+            gold.now -= self.menu_turret_price
+
+    def turret_sell(self):
+        if self.turret:
+            turrets.remove(self.turret)
+            self.turret = None
+            gold.now += int(self.turret_price/2)
+
+    def input_upgrade(self):
+        if gold.now >= self.upgrade_price and self.upgrade_level < 4:
+            self.upgrade_stand = True
+            gold.now -= self.upgrade_price
+
+    def key_input(self, k_input):
+        if k_input == 'u':
+            self.unit_menu = True
+            self.unit_click()
+        elif k_input == 'w':
+            self.warrior_unit_buy()
+        elif k_input == 'a':
+            self.archer_unit_buy()
+        elif k_input == 'c':
+            self.commander_unit_buy()
+        elif k_input == 'x':
+            self.main_menu()
+            self.unit_menu = False
+        elif k_input == 't':
+            self.turret_buy()
+        elif k_input == 's':
+            self.turret_sell()
+        elif k_input == 'g':
+            self.input_upgrade()
         
+
     def handle_click(self, pos):
         if self.first_img_rect.collidepoint(pos):
-            if self.unit_menu and gold.now >= self.unit_price and not self.is_unit_create_time:
-                self.menu_index = 0
-                self.is_unit_create_time = True
-                self.buy_unit_price = self.unit_price
-                self.buy_unit(self.buy_unit_price, self.first_img)
+            self.warrior_unit_buy()
             self.unit_menu = True
             self.unit_click()
 
         elif self.second_img_rect.collidepoint(pos):
-            if self.unit_menu and gold.now >= self.unit_price and not self.is_unit_create_time:
-                self.menu_index = 1
-                self.is_unit_create_time = True
-                self.buy_unit_price = self.unit_price
-                self.buy_unit(self.buy_unit_price, self.second_img)
-            elif not self.turret and not self.unit_menu and gold.now >= self.menu_price:
-                if self.upgrade_level == 1:
-                    img = "Turret/Turret1Top.png"
-                elif self.upgrade_level == 2:
-                    img = "Turret/Turret2Top.png"
-                elif self.upgrade_level == 3:
-                    img = "Turret/Turret3Top.png"
-                elif self.upgrade_level == 4:
-                    img = "Turret/Turret4Top.png"
-                self.turret = Turret(125, 550, flipped=True, img_file=img, level=self.upgrade_level)
-                turrets.add(self.turret)
-                self.turret_price = self.menu_price
-                gold.now -= self.menu_price
+            self.archer_unit_buy()
+            self.turret_buy()
 
         elif self.third_img_rect.collidepoint(pos):
-            if self.unit_menu and gold.now >= self.unit_price and not self.is_unit_create_time:
-                self.menu_index = 2
-                self.is_unit_create_time = True
-                self.buy_unit_price = self.unit_price
-                self.buy_unit(self.buy_unit_price, self.third_img)
-            elif self.turret:
-                turrets.remove(self.turret)
-                self.turret = None
-                gold.now += self.menu_price
+            self.commander_unit_buy()
+            self.turret_sell()
 
         elif self.forth_img_rect.collidepoint(pos):
             if self.unit_menu:
                 self.main_menu()
                 self.unit_menu = False
-            elif gold.now >= self.upgrade_price and self.upgrade_level < 4:
-                self.upgrade_stand = True
-                gold.now -= self.upgrade_price
+            self.input_upgrade()
 
 class Gold:
     def __init__(self):
@@ -1229,7 +1261,7 @@ menu_font = pygame.font.SysFont("system", 40) # menu 폰트
 background = pygame.image.load("background_tile/png/BG.png").convert_alpha()
 clock = pygame.time.Clock()
 titlefont = pygame.font.SysFont("system", 200)
-commnetfont = pygame.font.SysFont("system", 48)
+commentfont = pygame.font.SysFont("system", 48)
 quit = False
 
 while True:
@@ -1272,7 +1304,7 @@ while True:
 
         if not choose_game_difficulty:
             title_text = titlefont.render("Age of war!", 1, (0, 0, 0))
-            comment_text = commnetfont.render("Press to play button", 1, (255, 255, 255),)
+            comment_text = commentfont.render("Press to play button", 1, (255, 255, 255),)
             in_game.draw(screen)
             screen.blit(
                 title_text,
@@ -1285,11 +1317,12 @@ while True:
         else:
             in_game.difficulty_draw(screen)
             title_text = titlefont.render("Difficulty:", 1, (0, 0, 0))
-            detail_text = commnetfont.render("choose a difficulty to start the game", 1, (255, 255, 255),)
-            easy_text = commnetfont.render("easy", 1, (255, 255, 255),)
-            normal_text = commnetfont.render("normal", 1, (255, 255, 255),)
-            hard_text = commnetfont.render("hard", 1, (255, 255, 255),)
-            menu_return_text = commnetfont.render("return to the menu", 1, (0, 0, 0))
+            detail_text = commentfont.render("choose a difficulty to start the game", 1, (255, 255, 255),)
+            explain_text = commentfont.render("keyboard input esc to game stop and explain the game", 1, (166, 166, 166),)
+            easy_text = commentfont.render("easy", 1, (255, 255, 255),)
+            normal_text = commentfont.render("normal", 1, (255, 255, 255),)
+            hard_text = commentfont.render("hard", 1, (255, 255, 255),)
+            menu_return_text = commentfont.render("return to the menu", 1, (0, 0, 0))
 
             screen.blit(
                 title_text,
@@ -1298,6 +1331,10 @@ while True:
             screen.blit(
                 detail_text, 
                 detail_text.get_rect(center=(screen_width / 2, 200)),
+            )
+            screen.blit(
+                explain_text, 
+                explain_text.get_rect(center=(screen_width / 2, 575)),
             )
             screen.blit(
                 easy_text, 
@@ -1362,6 +1399,23 @@ while True:
                     else:
                         mixer.music.unpause()  # 음악 다시 재생
                     paused = not paused
+                elif event.key == pygame.K_u:
+                    menu_bar.key_input('u')
+                elif event.key == pygame.K_w:
+                    menu_bar.key_input('w')
+                elif event.key == pygame.K_a:
+                    menu_bar.key_input('a')
+                elif event.key == pygame.K_c:
+                    menu_bar.key_input('c')
+                elif event.key == pygame.K_x:
+                    menu_bar.key_input('x')
+                elif event.key == pygame.K_t:
+                    menu_bar.key_input('t')
+                elif event.key == pygame.K_s:
+                    menu_bar.key_input('s')
+                elif event.key == pygame.K_g:
+                    menu_bar.key_input('g')
+
 
         if not paused:  
             # player가 얻은 골드만큼 적군 유닛의 난이도가 상승
@@ -1589,9 +1643,27 @@ while True:
                 break
         else:
             # 일시정지 화면
-            font = pygame.font.Font(None, 74)
+            font = pygame.font.SysFont("system", 125)
             text = font.render("Paused", True, BLACK)
-            screen.blit(text, (screen.get_width()/2-80, 350))
+            explain_text_U = commentfont.render("key - U (into Unit Menu)", 1, (255, 94, 0),)
+            explain_text_T = commentfont.render("key - T (Create Turret)", 1, (255, 94, 0),)
+            explain_text_S = commentfont.render("key - S (Sell/Refund Turret)", 1, (255, 94, 0),)
+            explain_text_G = commentfont.render("key - G Upgrade Player", 1, (255, 94, 0),)
+            explain_text_X = commentfont.render("key - X exit Unit Menu(into Main)", 1, (255, 94, 0),)
+            explain_text_unit = commentfont.render("Unit Menu - W/warrior, A/archer, C/commander", 1, (255, 94, 0),)
+            screen.blit(text,text.get_rect(center=(screen_width / 2, 150)))
+            screen.blit(explain_text_U,
+                        explain_text_U.get_rect(center=(screen_width / 2, 250)))
+            screen.blit(explain_text_T,
+                        explain_text_T.get_rect(center=(screen_width / 2, 300)))
+            screen.blit(explain_text_S,
+                        explain_text_S.get_rect(center=(screen_width / 2, 350)))
+            screen.blit(explain_text_G,
+                        explain_text_G.get_rect(center=(screen_width / 2, 400)))
+            screen.blit(explain_text_unit,
+                        explain_text_unit.get_rect(center=(screen_width / 2, 500)))
+            screen.blit(explain_text_X,
+                        explain_text_X.get_rect(center=(screen_width / 2, 550)))
         pygame.display.flip()
         clock.tick(40)
     if quit:
