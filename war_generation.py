@@ -1360,7 +1360,7 @@ while True:
                     if not paused:
                         mixer.music.pause()  # 음악 일시정지
                     else:
-                        mixer.music.play(-1)  # 음악 다시 재생
+                        mixer.music.unpause()  # 음악 다시 재생
                     paused = not paused
 
         if not paused:  
@@ -1592,7 +1592,6 @@ while True:
             font = pygame.font.Font(None, 74)
             text = font.render("Paused", True, BLACK)
             screen.blit(text, (screen.get_width()/2-80, 350))
-            mixer.music.stop()
         pygame.display.flip()
         clock.tick(40)
     if quit:
