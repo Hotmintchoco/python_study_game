@@ -1315,7 +1315,11 @@ while True:
         pygame.display.flip()
         clock.tick(30)
 
-    """ 게임 """    
+    # 색상 설정
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)       
+    """ 게임 """
+    paused = False  # 게임 일시정지    
     enemy_rand = 0
     max_rand = 8
     game_difficult = 0
@@ -1349,230 +1353,239 @@ while True:
                 menu_bar.handle_click(event.pos)
             elif event.type == pygame.USEREVENT + 1:
                 handle_timer_events()
-                
-        # player가 얻은 골드만큼 적군 유닛의 난이도가 상승
-        if 400 >= gold.total_earn >= 192:
-            game_difficult = 3
-        elif  1200 > gold.total_earn > 400:
-            game_difficult = 6
-        
-        elif 1800 >= gold.total_earn >= 1200 and enemy_manage.level == 1:
-            enemy_manage.upgrade()
-            game_difficult = 0
-        
-        elif 2800 >= gold.total_earn > 1800:
-            game_difficult = 3
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    paused = not paused
 
-        elif 4400 >= gold.total_earn > 2800:
-            game_difficult = 6
-        
-        elif 6200 >= gold.total_earn > 4400 and enemy_manage.level == 2:
-            enemy_manage.upgrade()
-            game_difficult = 0
-        
-        elif 9200 >= gold.total_earn > 6200:
-            game_difficult = 3
-        
-        elif 16000 >= gold.total_earn > 9200:
-            game_difficult = 6
+        if not paused:  
+            # player가 얻은 골드만큼 적군 유닛의 난이도가 상승
+            if 400 >= gold.total_earn >= 192:
+                game_difficult = 3
+            elif  1200 > gold.total_earn > 400:
+                game_difficult = 6
+            
+            elif 1800 >= gold.total_earn >= 1200 and enemy_manage.level == 1:
+                enemy_manage.upgrade()
+                game_difficult = 0
+            
+            elif 2800 >= gold.total_earn > 1800:
+                game_difficult = 3
 
-        elif 22000 >= gold.total_earn > 16000 and enemy_manage.level == 3:
-            enemy_manage.upgrade()
-            game_difficult = 0
-        
-        elif 60000 >= gold.total_earn > 22000:
-            game_difficult = 3
-        
-        elif gold.total_earn > 60000:
-            game_difficult = 7
+            elif 4400 >= gold.total_earn > 2800:
+                game_difficult = 6
+            
+            elif 6200 >= gold.total_earn > 4400 and enemy_manage.level == 2:
+                enemy_manage.upgrade()
+                game_difficult = 0
+            
+            elif 9200 >= gold.total_earn > 6200:
+                game_difficult = 3
+            
+            elif 16000 >= gold.total_earn > 9200:
+                game_difficult = 6
 
-        # 적 유닛(enemy) 등장 확률 및 양 조절
-        rand = random.random()
-        if rand > 0.992 and len(enemy_units) < 5 and not enemy_unit:
-            enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
+            elif 22000 >= gold.total_earn > 16000 and enemy_manage.level == 3:
+                enemy_manage.upgrade()
+                game_difficult = 0
+            
+            elif 60000 >= gold.total_earn > 22000:
+                game_difficult = 3
+            
+            elif gold.total_earn > 60000:
+                game_difficult = 7
 
-            if game_difficult < 4:
-                print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                if enemy_rand >= game_difficult:
-                    enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract,
-                                enemy_manage.level, in_game.difficulty)
-                else:
-                    enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
-                                enemy_manage.level, in_game.difficulty)
-            else:
-                if enemy_manage.level <= 3:
+            # 적 유닛(enemy) 등장 확률 및 양 조절
+            rand = random.random()
+            if rand > 0.992 and len(enemy_units) < 5 and not enemy_unit:
+                enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
+
+                if game_difficult < 4:
                     print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
-                    if enemy_rand > game_difficult:
-                        enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract,
-                                    enemy_manage.level, in_game.difficulty)
-                    elif game_difficult >= enemy_rand > 3:
-                        enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                    if enemy_rand >= game_difficult:
+                        enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract,
                                     enemy_manage.level, in_game.difficulty)
                     else:
-                        enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
+                        enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
                                     enemy_manage.level, in_game.difficulty)
                 else:
-                    if enemy_rand > game_difficult:
-                        enemy_unit = Enemy_Commander_Raider_Unit(1150, 680 - enemy_manage.y_subtract,
-                                    enemy_manage.level, in_game.difficulty)
-                    elif game_difficult >= enemy_rand > 3:
-                        enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
-                                    enemy_manage.level, in_game.difficulty)
+                    if enemy_manage.level <= 3:
+                        print(f"적 등장 확률 : {enemy_rand} / 현재 난이도: {game_difficult}")
+                        if enemy_rand > game_difficult:
+                            enemy_unit = Enemy_Commander_Unit(1150, 680 - enemy_manage.y_subtract,
+                                        enemy_manage.level, in_game.difficulty)
+                        elif game_difficult >= enemy_rand > 3:
+                            enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                                        enemy_manage.level, in_game.difficulty)
+                        else:
+                            enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
+                                        enemy_manage.level, in_game.difficulty)
                     else:
-                        enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
-                                    enemy_manage.level, in_game.difficulty)
+                        if enemy_rand > game_difficult:
+                            enemy_unit = Enemy_Commander_Raider_Unit(1150, 680 - enemy_manage.y_subtract,
+                                        enemy_manage.level, in_game.difficulty)
+                        elif game_difficult >= enemy_rand > 3:
+                            enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
+                                        enemy_manage.level, in_game.difficulty)
+                        else:
+                            enemy_unit = Enemy_Warrior_Unit(1150, 680 - enemy_manage.y_subtract, 
+                                        enemy_manage.level, in_game.difficulty)
 
-        if enemy_unit:
-            enemy_manage.create_delay(enemy_unit)
-            if enemy_manage.is_create:
-                enemy_manage.is_create = False
-                enemy_unit = None
-            
-        if menu_bar.is_unit_create:
-            unit_sprites.add(menu_bar.create_unit())
-            menu_bar.bool_add_unit = True
+            if enemy_unit:
+                enemy_manage.create_delay(enemy_unit)
+                if enemy_manage.is_create:
+                    enemy_manage.is_create = False
+                    enemy_unit = None
+                
+            if menu_bar.is_unit_create:
+                unit_sprites.add(menu_bar.create_unit())
+                menu_bar.bool_add_unit = True
 
-        if menu_bar.turret:
-            menu_bar.turret.shot_turret()
-        """업데이트"""
-        point = pygame.mouse.get_pos()
-        lmousedown = pygame.mouse.get_pressed()[0]
-        menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
-
-        if point[0] > 1000 and bgx < 249:
-            bgx += GROUND_SPEED
-        elif point[0] < 25 and bgx > 0:
-            bgx -= GROUND_SPEED
-
-        for enemy in enemy_units.copy():
-            unit_collide_check(enemy_units, enemy)
-            enemy.shot_complition = False
-            enemy.attack_tree(tree)
-            if enemy.hp <= 0 and not enemy.is_dead:
-                    enemy.is_dead = True
-                    dead_unit_sprites.add(Dead_Unit(enemy))
-
-            if not unit_sprites and not enemy.target_tree:
-                enemy.attack = False
-            if enemy.is_dead:
-                enemy_units.remove(enemy)
-                gold.update(enemy.price)
-            
             if menu_bar.turret:
-                menu_bar.turret.set_target(enemy)
+                menu_bar.turret.shot_turret()
+            """업데이트"""
+            point = pygame.mouse.get_pos()
+            lmousedown = pygame.mouse.get_pressed()[0]
+            menu_text = menu_font.render("Menu", True, (128, 0, 0)) # menu
 
-            for shell in shells.copy():
-                if shell.rect.colliderect(enemy.rect):
-                    enemy.hp -= shell.damage
-                    shells.remove(shell)
+            if point[0] > 1000 and bgx < 249:
+                bgx += GROUND_SPEED
+            elif point[0] < 25 and bgx > 0:
+                bgx -= GROUND_SPEED
+
+            for enemy in enemy_units.copy():
+                unit_collide_check(enemy_units, enemy)
+                enemy.shot_complition = False
+                enemy.attack_tree(tree)
+                if enemy.hp <= 0 and not enemy.is_dead:
+                        enemy.is_dead = True
+                        dead_unit_sprites.add(Dead_Unit(enemy))
+
+                if not unit_sprites and not enemy.target_tree:
+                    enemy.attack = False
+                if enemy.is_dead:
+                    enemy_units.remove(enemy)
+                    gold.update(enemy.price)
+                
+                if menu_bar.turret:
+                    menu_bar.turret.set_target(enemy)
+
+                for shell in shells.copy():
+                    if shell.rect.colliderect(enemy.rect):
+                        enemy.hp -= shell.damage
+                        shells.remove(shell)
+
+                for arrow in arrows.copy():
+                    if arrow.x > enemy.x - 10:
+                        enemy.hp -= arrow.damage
+                        arrows.remove(arrow)
+            
+            for enemy in enemy_units.copy():
+                if enemy.is_shot:
+                    enemy.shot_tree(tree, enemy.shot_complition)
+                
+            for unit in unit_sprites.copy():
+                unit_collide_check(unit_sprites, unit)
+                unit.shot_complition = False
+                unit.attack_tree(enemy_tree)
+                if unit.hp <= 0 and not unit.is_dead:
+                        unit.is_dead = True
+                        dead_unit_sprites.add(Dead_Unit(unit))
+                if not enemy_units and not unit.target_tree:
+                    unit.attack = False
+                if unit.is_dead:
+                    unit_sprites.remove(unit)
+
+                for arrow in enemy_arrows.copy():
+                    if arrow.x < unit.x + 10:
+                        unit.hp -= arrow.damage
+                        enemy_arrows.remove(arrow)
+                        print(unit.hp)
 
             for arrow in arrows.copy():
-                if arrow.x > enemy.x - 10:
-                    enemy.hp -= arrow.damage
+                if arrow.rect.colliderect(enemy_tree.collide_rect):
+                    enemy_tree.hp -= arrow.damage
                     arrows.remove(arrow)
-        
-        for enemy in enemy_units.copy():
-            if enemy.is_shot:
-                enemy.shot_tree(tree, enemy.shot_complition)
-            
-        for unit in unit_sprites.copy():
-            unit_collide_check(unit_sprites, unit)
-            unit.shot_complition = False
-            unit.attack_tree(enemy_tree)
-            if unit.hp <= 0 and not unit.is_dead:
-                    unit.is_dead = True
-                    dead_unit_sprites.add(Dead_Unit(unit))
-            if not enemy_units and not unit.target_tree:
-                unit.attack = False
-            if unit.is_dead:
-                unit_sprites.remove(unit)
+                    print("화살피격/ enemy_tree.hp: ", enemy_tree.hp)
 
             for arrow in enemy_arrows.copy():
-                if arrow.x < unit.x + 10:
-                    unit.hp -= arrow.damage
+                if arrow.rect.colliderect(tree.collide_rect):
+                    tree.hp -= arrow.damage
                     enemy_arrows.remove(arrow)
-                    print(unit.hp)
+                    print(tree.hp)
 
-        for arrow in arrows.copy():
-            if arrow.rect.colliderect(enemy_tree.collide_rect):
-                enemy_tree.hp -= arrow.damage
-                arrows.remove(arrow)
-                print("화살피격/ enemy_tree.hp: ", enemy_tree.hp)
+            # unit -> dead_sprites 완료 후 삭제처리
+            for dead_unit in dead_unit_sprites.copy():
+                if dead_unit.sprite_id >= len(dead_unit.sprites) - 1:
+                    dead_unit_sprites.remove(dead_unit)
 
-        for arrow in enemy_arrows.copy():
-            if arrow.rect.colliderect(tree.collide_rect):
-                tree.hp -= arrow.damage
-                enemy_arrows.remove(arrow)
-                print(tree.hp)
+            # commander_raider -> shot_effect 완료 후 삭제
+            for shot in shots.copy():
+                if shot.sprite_id >= len(shot.sprites) - 1:
+                    shots.remove(shot)
 
-        # unit -> dead_sprites 완료 후 삭제처리
-        for dead_unit in dead_unit_sprites.copy():
-            if dead_unit.sprite_id >= len(dead_unit.sprites) - 1:
-                dead_unit_sprites.remove(dead_unit)
-
-        # commander_raider -> shot_effect 완료 후 삭제
-        for shot in shots.copy():
-            if shot.sprite_id >= len(shot.sprites) - 1:
-                shots.remove(shot)
-
-        for unit in unit_sprites.copy():
-            if unit.is_shot:
-                unit.shot_tree(enemy_tree, unit.shot_complition)
-            for enemy in enemy_units.copy():
-                unit.fighting(enemy)
-                enemy.fighting(unit)
+            for unit in unit_sprites.copy():
                 if unit.is_shot:
-                    unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
-                else:
-                    unit.now_shot = False
-                if enemy.is_shot:
-                    enemy.shot_complition = enemy.shot_arrow(unit, enemy.shot_complition)
+                    unit.shot_tree(enemy_tree, unit.shot_complition)
+                for enemy in enemy_units.copy():
+                    unit.fighting(enemy)
+                    enemy.fighting(unit)
+                    if unit.is_shot:
+                        unit.shot_complition = unit.shot_arrow(enemy, unit.shot_complition)
+                    else:
+                        unit.now_shot = False
+                    if enemy.is_shot:
+                        enemy.shot_complition = enemy.shot_arrow(unit, enemy.shot_complition)
 
-        menu_bar.update()
-        unit_sprites.update(bgx)
-        enemy_units.update(bgx)
-        turrets.update(bgx)
-        arrows.update(bgx)
-        enemy_arrows.update(bgx)
-        shells.update(bgx)
-        dead_unit_sprites.update(bgx)
-        shots.update(bgx)
-        trees.update(bgx)
+            menu_bar.update()
+            unit_sprites.update(bgx)
+            enemy_units.update(bgx)
+            turrets.update(bgx)
+            arrows.update(bgx)
+            enemy_arrows.update(bgx)
+            shells.update(bgx)
+            dead_unit_sprites.update(bgx)
+            shots.update(bgx)
+            trees.update(bgx)
 
-        """화면에 그리기"""
-        screen.fill((255, 255, 255))
-        screen.blit(background, dest=(-bgx, 0))
-        ground.draw(screen, bgx)
-        gold.draw(menu_font)
-        menu_bar.draw(screen)
-        screen.blit(menu_text, (725, 20))
-        # 나무
-        trees.draw(screen)
-        menu_bar.point_for_menu_draw(point)
+            """화면에 그리기"""
+            screen.fill((255, 255, 255))
+            screen.blit(background, dest=(-bgx, 0))
+            ground.draw(screen, bgx)
+            gold.draw(menu_font)
+            menu_bar.draw(screen)
+            screen.blit(menu_text, (725, 20))
+            # 나무
+            trees.draw(screen)
+            menu_bar.point_for_menu_draw(point)
 
-        dead_unit_sprites.draw(screen)
-        unit_sprites.draw(screen)
-        for unit in unit_sprites.copy(): 
-            unit.unit_hp_draw(point) # 유닛 체력바
-        enemy_units.draw(screen)
-        for enemy in enemy_units.copy():
-            enemy.unit_hp_draw(point)
-        turrets.draw(screen)
-        arrows.draw(screen)
-        enemy_arrows.draw(screen)
-        shells.draw(screen)
-        shots.draw(screen)
-        tree.tree_hp_draw()
-        enemy_tree.tree_hp_draw()
-        # 게임 종료
-        if enemy_tree.hp <= 0: # 클리어
-            in_game.game_stop("Cleared!", 250)
-            running = False
-            break
-        elif tree.hp <= 0:
-            in_game.game_stop("Game Over!", 100)
-            running = False
-            break
+            dead_unit_sprites.draw(screen)
+            unit_sprites.draw(screen)
+            for unit in unit_sprites.copy(): 
+                unit.unit_hp_draw(point) # 유닛 체력바
+            enemy_units.draw(screen)
+            for enemy in enemy_units.copy():
+                enemy.unit_hp_draw(point)
+            turrets.draw(screen)
+            arrows.draw(screen)
+            enemy_arrows.draw(screen)
+            shells.draw(screen)
+            shots.draw(screen)
+            tree.tree_hp_draw()
+            enemy_tree.tree_hp_draw()
+            # 게임 종료
+            if enemy_tree.hp <= 0: # 클리어
+                in_game.game_stop("Cleared!", 250)
+                running = False
+                break
+            elif tree.hp <= 0:
+                in_game.game_stop("Game Over!", 100)
+                running = False
+                break
+        else:
+            # 일시정지 화면
+            font = pygame.font.Font(None, 74)
+            text = font.render("Paused", True, BLACK)
+            screen.blit(text, (screen.get_width()/2-80, 350))
         pygame.display.flip()
         clock.tick(40)
     if quit:
