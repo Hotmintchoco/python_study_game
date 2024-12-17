@@ -4,7 +4,7 @@ import random
 from pygame import mixer
 
 GROUND_SPEED = 7.5
-GAME_GOLD = 250
+GAME_GOLD = 60000
 ENEMY_LEVEL = 1
 
 class GameObject(pygame.sprite.Sprite):
@@ -171,7 +171,7 @@ class Dead_Unit(GameObject):
             except:
                 break                
         return self.sprites
-         
+
 class Warrior_Unit(Unit):
     run_sprites = []
     attack_sprites = []
@@ -845,6 +845,7 @@ class Menu:
         self.upgrade_stand = False
         self.turret = None
         self.upgrade_level = 1
+        self.buy_unit_img = None
         
         self.first_img_rect = self.first_img.get_rect(topleft=(725, 60))  # Unit image position
         self.second_img_rect = self.second_img.get_rect(topleft=(800, 60))
@@ -881,6 +882,7 @@ class Menu:
         if self.is_unit_create_time and self.unit_create_gauge <= Menu.MAX_GAUGE:
             self.unit_create_gauge += self.list_unit_create_gauge[self.menu_index]
             self.unit_create_time_rect = pygame.Rect(350, 15, self.unit_create_gauge, 25)
+            self.buy_unit_img_rect = self.buy_unit_img.get_rect(topleft=(325, 15))
         elif self.unit_create_gauge > Menu.MAX_GAUGE:
             self.is_unit_create = True 
             self.is_unit_create_time = False
@@ -925,7 +927,8 @@ class Menu:
             return self.dict_unit_price[self.buy_unit_price](125, 670, self.upgrade_level)
         return self.dict_unit_price[self.buy_unit_price](125, 680, self.upgrade_level)
 
-    def buy_unit(self, unit_price):
+    def buy_unit(self, unit_price, unit_img):
+        self.buy_unit_img = unit_img
         self.bool_add_unit = False
         gold.now -= unit_price
 
@@ -938,7 +941,8 @@ class Menu:
 
         if self.is_unit_create_time:
             pygame.draw.rect(screen, (125, 125, 125), self.unit_create_time_rect)
-    
+            screen.blit(self.buy_unit_img, self.buy_unit_img_rect.topleft)
+
     def point_for_menu_draw(self, pos):
         if self.unit_menu:
             if self.first_img_rect.collidepoint(pos):
@@ -1035,7 +1039,7 @@ class Menu:
                 self.menu_index = 0
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
-                self.buy_unit(self.buy_unit_price)
+                self.buy_unit(self.buy_unit_price, self.first_img)
             self.unit_menu = True
             self.unit_click()
 
@@ -1044,7 +1048,7 @@ class Menu:
                 self.menu_index = 1
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
-                self.buy_unit(self.buy_unit_price)
+                self.buy_unit(self.buy_unit_price, self.second_img)
             elif not self.turret and not self.unit_menu and gold.now >= self.menu_price:
                 if self.upgrade_level == 1:
                     img = "Turret/Turret1Top.png"
@@ -1064,7 +1068,7 @@ class Menu:
                 self.menu_index = 2
                 self.is_unit_create_time = True
                 self.buy_unit_price = self.unit_price
-                self.buy_unit(self.buy_unit_price)
+                self.buy_unit(self.buy_unit_price, self.third_img)
             elif self.turret:
                 turrets.remove(self.turret)
                 self.turret = None
