@@ -8,7 +8,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 # 게임 설정  
 GROUND_SPEED = 7.5
-GAME_GOLD = 60000
+GAME_GOLD = 250
 ENEMY_LEVEL = 1
 
 class GameObject(pygame.sprite.Sprite):
