@@ -586,7 +586,7 @@ class Enemy_Commander_Raider_Unit(Archer):
         unit_hp = 1000
         self.shot_distance = 150
         ds = 0.19
-        self.price = 12000
+        self.price = 22000
 
         if difficulty == 2:
             self.damage += (self.damage * (difficulty - 1))/2
@@ -691,7 +691,7 @@ class Turret(GameObject):
             self.target_distance = 400
             self.shot_wait = 55
         elif level == 2:
-            self.damage = 50
+            self.damage = 55
             self.turret_speed = 30
             self.target_distance = 450
             self.shot_wait = 50
@@ -701,7 +701,7 @@ class Turret(GameObject):
             self.target_distance = 500
             self.shot_wait = 60
         elif level == 4:
-            self.damage = 75
+            self.damage = 80
             self.turret_speed = 20
             self.target_distance = 550
             self.shot_wait = 30
@@ -1015,7 +1015,7 @@ class Menu:
                 500 : Commander_Unit
             }
             self.menu_turret_price = 800
-            self.upgrade_price = 2000
+            self.upgrade_price = 1600
             tree.hp += 250
             tree.max_hp += 250
             self.list_unit_create_gauge = [5.5, 4.5, 3]
@@ -1026,7 +1026,7 @@ class Menu:
                 1500 : Commander_Unit
             }
             self.menu_turret_price = 2000
-            self.upgrade_price = 8000
+            self.upgrade_price = 7000
             self.list_unit_create_gauge = [4.5, 3, 2]
             tree.hp += 500
             tree.max_hp += 500
@@ -1387,6 +1387,7 @@ while True:
     enemy_rand = 0
     max_rand = 8
     game_difficult = 0
+    enemy_troops = 5
     enemy_unit = None
     menu_bar = Menu()
     enemy_manage = Enemy_Manage()
@@ -1473,15 +1474,17 @@ while True:
                 enemy_manage.upgrade()
                 game_difficult = 0
             
-            elif 60000 >= gold.total_earn > 22000:
+            elif 44000 >= gold.total_earn > 22000:
                 game_difficult = 3
             
-            elif gold.total_earn > 60000:
+            elif gold.total_earn > 44000:
                 game_difficult = 7
 
             # 적 유닛(enemy) 등장 확률 및 양 조절
             rand = random.random()
-            if rand > 0.992 and len(enemy_units) < 5 and not enemy_unit:
+            if in_game.difficulty >= 3:
+                enemy_troops = 6
+            if rand > 0.992 and len(enemy_units) < enemy_troops and not enemy_unit:
                 enemy_rand = round(rand * 1000 - 992) # 0 ~ 8 까지
 
                 if game_difficult < 4:
@@ -1508,7 +1511,7 @@ while True:
                         if enemy_rand > game_difficult:
                             enemy_unit = Enemy_Commander_Raider_Unit(1150, 680 - enemy_manage.y_subtract,
                                         enemy_manage.level, in_game.difficulty)
-                        elif game_difficult >= enemy_rand > 3:
+                        elif game_difficult >= enemy_rand > 2:
                             enemy_unit = Enemy_Archer_Unit(1150, 680 - enemy_manage.y_subtract,
                                         enemy_manage.level, in_game.difficulty)
                         else:
