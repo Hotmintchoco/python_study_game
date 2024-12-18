@@ -1073,7 +1073,7 @@ class Menu:
             gold.now += int(self.turret_price/2)
 
     def input_upgrade(self):
-        if gold.now >= self.upgrade_price and self.upgrade_level < 4:
+        if gold.now >= self.upgrade_price and not self.unit_menu and self.upgrade_level < 4:
             self.upgrade_stand = True
             gold.now -= self.upgrade_price
 
@@ -1116,7 +1116,8 @@ class Menu:
             if self.unit_menu:
                 self.main_menu()
                 self.unit_menu = False
-            self.input_upgrade()
+            else:
+                self.input_upgrade()
 
 class Gold:
     def __init__(self):
