@@ -1067,7 +1067,7 @@ class Menu:
             gold.now -= self.menu_turret_price
 
     def turret_sell(self):
-        if self.turret:
+        if self.turret and not self.unit_menu:
             turrets.remove(self.turret)
             self.turret = None
             gold.now += int(self.turret_price/2)
