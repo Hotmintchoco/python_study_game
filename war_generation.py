@@ -105,7 +105,10 @@ class Unit(GameObject):
                 self.sprites = self.run_sprites
         super().update(bgx)
         self.collide_rect.center = self.rect.center
-        self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, self.hp // self.hp_divide, 5)
+        draw_hp_bar = self.hp / self.hp_divide
+        if 0 < draw_hp_bar < 1:
+            draw_hp_bar = 1
+        self.hp_bar = pygame.Rect(self.x-25-bgx, self.y-40, draw_hp_bar, 5)
     
     def change_motion(self):
         if not self.is_change_motion:
@@ -420,7 +423,7 @@ class Enemy_Warrior_Unit(Unit):
             ds = 0.15
             self.price = 850
 
-        unit_hp = self.damage * 4
+        unit_hp = self.damage * 4 #53.6
         if difficulty == 2 and unit_level == 3:
             self.damage += (self.damage * (difficulty - 1))/2
             unit_hp += (unit_hp * (difficulty - 1))/2
@@ -428,8 +431,11 @@ class Enemy_Warrior_Unit(Unit):
             self.damage += (self.damage * (difficulty - 1))/2 - 0.1
             unit_hp += (unit_hp * (difficulty - 1))/2 - 0.5
         elif difficulty == 3:
-            self.damage += (self.damage * (difficulty - 1.5))/2
-            unit_hp += (unit_hp * (difficulty - 1.5))/2
+            self.damage += (self.damage * (difficulty - 1.25))/2
+            unit_hp += (unit_hp * (difficulty - 1.25))/2
+        elif difficulty == 4:
+            self.damage += (self.damage * (difficulty - 2))/2
+            unit_hp += (unit_hp * (difficulty - 2))/2
         
         super().__init__(x, y, img_file, flipped=True, unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
@@ -477,8 +483,11 @@ class Enemy_Archer_Unit(Archer):
             self.damage += (self.damage * (difficulty - 1))/2 - 0.1
             unit_hp += (unit_hp * (difficulty - 1))/2 - 0.5
         elif difficulty == 3:
-            self.damage += (self.damage * (difficulty - 1.5))/2
-            unit_hp += (unit_hp * (difficulty - 1.5))/2
+            self.damage += (self.damage * (difficulty - 1.25))/2
+            unit_hp += (unit_hp * (difficulty - 1.25))/2
+        elif difficulty == 4:
+            self.damage += (self.damage * (difficulty - 2))/2 
+            unit_hp += (unit_hp * (difficulty - 2))/2
         super().__init__(x, y, self.img_file, unit_level=unit_level, hp=unit_hp,
                          unit_ds=ds, add_collide_rect=add_collide_rect, flipped=True)
         
@@ -557,8 +566,11 @@ class Enemy_Commander_Unit(Unit):
             self.damage += (self.damage * (difficulty - 1))/2 - 0.1
             unit_hp += (unit_hp * (difficulty - 1))/2 - 0.5
         elif difficulty == 3:
-            self.damage += (self.damage * (difficulty - 1.5))/2
-            unit_hp += (unit_hp * (difficulty - 1.5))/2
+            self.damage += (self.damage * (difficulty - 1.25))/2
+            unit_hp += (unit_hp * (difficulty - 1.25))/2
+        elif difficulty == 4:
+            self.damage += (self.damage * (difficulty - 2))/2
+            unit_hp += (unit_hp * (difficulty - 2))/2
         super().__init__(x, y, img_file, flipped=True,
                         unit_vx=-1.5, hp=unit_hp, unit_ds=ds)
 
@@ -580,8 +592,11 @@ class Enemy_Commander_Raider_Unit(Archer):
             self.damage += (self.damage * (difficulty - 1))/2
             unit_hp += (unit_hp * (difficulty - 1))/2
         elif difficulty == 3:
-            self.damage += (self.damage * (difficulty - 1.5))/2
-            unit_hp += (unit_hp * (difficulty - 1.5))/2
+            self.damage += (self.damage * (difficulty - 1.25))/2
+            unit_hp += (unit_hp * (difficulty - 1.25))/2
+        elif difficulty == 4:
+            self.damage += (self.damage * (difficulty - 2))/2
+            unit_hp += (unit_hp * (difficulty - 2))/2
         super().__init__(x, y, img_file, flipped=True, unit_level=unit_level,
                         hp=unit_hp,unit_ds=ds)
         
@@ -674,7 +689,7 @@ class Turret(GameObject):
         if level == 1:
             self.damage = 27.5
             self.target_distance = 400
-            self.shot_wait = 70
+            self.shot_wait = 55
         elif level == 2:
             self.damage = 50
             self.turret_speed = 30
@@ -686,7 +701,7 @@ class Turret(GameObject):
             self.target_distance = 500
             self.shot_wait = 60
         elif level == 4:
-            self.damage = 100
+            self.damage = 75
             self.turret_speed = 20
             self.target_distance = 550
             self.shot_wait = 30
@@ -1191,9 +1206,10 @@ class Tree(GameObject):
 class Game_Ready:
     def __init__(self):
         self.button = pygame.Rect(500, 500, 350, 75)
-        self.easybutton = pygame.Rect(500, 300, 200, 50)
-        self.normalbutton = pygame.Rect(500, 400, 200, 50)
-        self.hardbutton = pygame.Rect(500, 500, 200, 50)
+        self.easybutton = pygame.Rect(500, 275, 200, 50)
+        self.normalbutton = pygame.Rect(500, 350, 200, 50)
+        self.hardbutton = pygame.Rect(500, 425, 200, 50)
+        self.impossiblebutton = pygame.Rect(500, 500, 200, 50)
         self.menubutton = pygame.Rect(500, 650, 350, 50)
         self.difficulty = 0
 
@@ -1211,13 +1227,15 @@ class Game_Ready:
 
     def difficulty_draw(self, screen):
         screen_width= screen.get_width()
-        self.easybutton.center = (screen_width / 2, 300)
-        self.normalbutton.center = (screen_width / 2, 400)
-        self.hardbutton.center = (screen_width / 2, 500)
+        self.easybutton.center = (screen_width / 2, 275)
+        self.normalbutton.center = (screen_width / 2, 350)
+        self.hardbutton.center = (screen_width / 2, 425)
+        self.impossiblebutton.center = (screen_width / 2, 500)
         self.menubutton.center = (screen_width / 2, 650)
         pygame.draw.rect(screen, (71, 200, 62), self.easybutton)
         pygame.draw.rect(screen, (71, 200, 62), self.normalbutton)
         pygame.draw.rect(screen, (71, 200, 62), self.hardbutton)
+        pygame.draw.rect(screen, (71, 200, 62), self.impossiblebutton)
         pygame.draw.rect(screen, (234, 234, 234), self.menubutton)
         
 
@@ -1286,6 +1304,8 @@ while True:
                         in_game.difficulty = 2
                     elif in_game.hardbutton.collidepoint(event.pos):
                         in_game.difficulty = 3
+                    elif in_game.impossiblebutton.collidepoint(event.pos):
+                        in_game.difficulty = 4
                     elif in_game.menubutton.collidepoint(event.pos):
                         choose_game_difficulty = False
 
@@ -1323,6 +1343,7 @@ while True:
             easy_text = commentfont.render("easy", 1, (255, 255, 255),)
             normal_text = commentfont.render("normal", 1, (255, 255, 255),)
             hard_text = commentfont.render("hard", 1, (255, 255, 255),)
+            impossible_text = commentfont.render("impossible", 1, (255, 255, 255),)
             menu_return_text = commentfont.render("return to the menu", 1, (0, 0, 0))
 
             screen.blit(
@@ -1339,15 +1360,19 @@ while True:
             )
             screen.blit(
                 easy_text, 
-                easy_text.get_rect(center=(screen_width / 2, 300)),
+                easy_text.get_rect(center=(screen_width / 2, 275)),
             )
             screen.blit(
                 normal_text, 
-                normal_text.get_rect(center=(screen_width / 2, 400)),
+                normal_text.get_rect(center=(screen_width / 2, 350)),
             )
             screen.blit(
                 hard_text, 
-                hard_text.get_rect(center=(screen_width / 2, 500)),
+                hard_text.get_rect(center=(screen_width / 2, 425)),
+            )
+            screen.blit(
+                impossible_text, 
+                impossible_text.get_rect(center=(screen_width / 2, 500)),
             )
             screen.blit(
                 menu_return_text, 
@@ -1416,7 +1441,6 @@ while True:
                     menu_bar.key_input('s')
                 elif event.key == pygame.K_g:
                     menu_bar.key_input('g')
-
 
         if not paused:  
             # player가 얻은 골드만큼 적군 유닛의 난이도가 상승
@@ -1633,6 +1657,21 @@ while True:
             shots.draw(screen)
             tree.tree_hp_draw()
             enemy_tree.tree_hp_draw()
+
+            # 게임 난이도
+            if in_game.difficulty == 1:
+                detail_text = commentfont.render("Easy", 1, (0, 0, 0),)
+            elif in_game.difficulty == 2:
+                detail_text = commentfont.render("normal", 1, (0, 0, 0),)
+            elif in_game.difficulty == 3:
+                detail_text = commentfont.render("hard", 1, (0, 0, 0),)
+            elif in_game.difficulty == 4:
+                detail_text = commentfont.render("impossible", 1, (0, 0, 0),)
+        
+            screen.blit(
+                    detail_text, 
+                    detail_text.get_rect(center=(100, 150)),
+                )
             # 게임 종료
             if enemy_tree.hp <= 0: # 클리어
                 in_game.game_stop("Cleared!", 250)
